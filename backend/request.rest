@@ -101,7 +101,8 @@ Content-Type: application/json
 	"password": "ReplaceWithAdminPassword123!"
 }
 
-### Add the created product to the cart (Phase 5, not implemented yet)
+### Add the created product to the cart (Phase 5)
+# Adding the same product again increases its existing cart quantity.
 POST {{baseUrl}}/api/cart
 Authorization: Bearer {{loginCustomer.response.body.$.token}}
 Content-Type: application/json
@@ -111,11 +112,12 @@ Content-Type: application/json
 	"quantity": 2
 }
 
-### View the customer's cart (Phase 5, not implemented yet)
+### View the customer's cart (Phase 5)
 GET {{baseUrl}}/api/cart
 Authorization: Bearer {{loginCustomer.response.body.$.token}}
 
-### Update the cart quantity (Phase 5, not implemented yet)
+### Set the cart quantity (Phase 5)
+# PATCH sets the quantity to this value; it does not add to the current quantity.
 PATCH {{baseUrl}}/api/cart/{{createProduct.response.body.$.id}}
 Authorization: Bearer {{loginCustomer.response.body.$.token}}
 Content-Type: application/json
@@ -124,33 +126,33 @@ Content-Type: application/json
 	"quantity": 1
 }
 
-### Remove this product from the cart (Phase 5, not implemented yet)
+### Remove this product from the cart (Phase 5)
 DELETE {{baseUrl}}/api/cart/{{createProduct.response.body.$.id}}
 Authorization: Bearer {{loginCustomer.response.body.$.token}}
 
-### Clear the cart (Phase 5, not implemented yet)
+### Clear the cart (Phase 5)
 DELETE {{baseUrl}}/api/cart
 Authorization: Bearer {{loginCustomer.response.body.$.token}}
 
-### Place an order from the customer's cart (Phase 6, not implemented yet)
-# The server should calculate totals from the cart; do not send a client total.
+### Place an order from the customer's cart (Phase 6)
+# The server calculates totals and snapshots product names and prices from the database.
 # @name placeOrder
 POST {{baseUrl}}/api/orders
 Authorization: Bearer {{loginCustomer.response.body.$.token}}
 
-### List the customer's orders (Phase 6, not implemented yet)
+### List the customer's orders (Phase 6)
 GET {{baseUrl}}/api/orders
 Authorization: Bearer {{loginCustomer.response.body.$.token}}
 
-### Get the order created above (Phase 6, not implemented yet)
+### Get the order created above (Phase 6)
 GET {{baseUrl}}/api/orders/{{placeOrder.response.body.$.id}}
 Authorization: Bearer {{loginCustomer.response.body.$.token}}
 
-### List all orders (admin, Phase 6, not implemented yet)
+### List all orders (admin, Phase 6)
 GET {{baseUrl}}/api/admin/orders
 Authorization: Bearer {{loginAdmin.response.body.$.token}}
 
-### Update the order status (admin, Phase 6, not implemented yet)
+### Update the order status (admin, Phase 6)
 PATCH {{baseUrl}}/api/admin/orders/{{placeOrder.response.body.$.id}}
 Authorization: Bearer {{loginAdmin.response.body.$.token}}
 Content-Type: application/json
