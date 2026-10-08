@@ -1,6 +1,4 @@
 @baseUrl = http://localhost:5000
-@adminToken = replace-with-an-admin-jwt
-@customerToken = replace-with-a-customer-jwt
 
 ### Health check
 GET {{baseUrl}}/api/health
@@ -10,10 +8,11 @@ GET {{baseUrl}}/api/products
 
 ### Create a product (Phase 3, admin only)
 # Run this before the product detail, update, cart, and order requests.
-# Replace @adminToken with a valid JWT containing role: "ADMIN".
+# Create an admin account by promoting a registered user in PostgreSQL, then log in below.
+# Registration deliberately does not allow clients to choose the admin role.
 # @name createProduct
 POST {{baseUrl}}/api/products
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
 Content-Type: application/json
 
 {
@@ -29,7 +28,7 @@ GET {{baseUrl}}/api/products/{{createProduct.response.body.$.id}}
 
 ### Update the product stock (Phase 3, admin only)
 PATCH {{baseUrl}}/api/products/{{createProduct.response.body.$.id}}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
 Content-Type: application/json
 
 {
@@ -39,7 +38,7 @@ Content-Type: application/json
 
 ### Invalid product payload example (Phase 3, expect 400)
 POST {{baseUrl}}/api/products
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
 Content-Type: application/json
 
 {
@@ -47,7 +46,7 @@ Content-Type: application/json
 	"price": -10
 }
 
-### Register a customer (Phase 4, not implemented yet)
+### Register a customer (Phase 4)
 # Use a new email if you have already registered this address.
 # @name registerCustomer
 POST {{baseUrl}}/api/auth/register
@@ -58,8 +57,17 @@ Content-Type: application/json
 	"email": "jordan.customer@example.com",
 	"password": "StorePass123!"
 }
+###
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
 
-### Log in as a customer (Phase 4, not implemented yet)
+{
+    "name":"admin",
+	"email": "admin@example.com",
+	"password": "ReplaceWithAdminPassword123!"
+}
+
+### Log in as a customer (Phase 4)
 # @name loginCustomer
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
@@ -69,13 +77,33 @@ Content-Type: application/json
 	"password": "StorePass123!"
 }
 
-### Get the current customer (Phase 4, not implemented yet)
+### Try an incorrect password (Phase 4, expect 401)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+	"email": "jordan.customer@example.com",
+	"password": "WrongPassword123!"
+}
+
+### Get the current customer (Phase 4)
 GET {{baseUrl}}/api/auth/me
-Authorization: Bearer {{customerToken}}
+Authorization: Bearer {{loginCustomer.response.body.$.token}}
+
+### Log in as an admin (Phase 4)
+# This account must already exist and have role ADMIN in the database.
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+	"email": "admin@example.com",
+	"password": "ReplaceWithAdminPassword123!"
+}
 
 ### Add the created product to the cart (Phase 5, not implemented yet)
 POST {{baseUrl}}/api/cart
-Authorization: Bearer {{customerToken}}
+Authorization: Bearer {{loginCustomer.response.body.$.token}}
 Content-Type: application/json
 
 {
@@ -85,11 +113,11 @@ Content-Type: application/json
 
 ### View the customer's cart (Phase 5, not implemented yet)
 GET {{baseUrl}}/api/cart
-Authorization: Bearer {{customerToken}}
+Authorization: Bearer {{loginCustomer.response.body.$.token}}
 
 ### Update the cart quantity (Phase 5, not implemented yet)
 PATCH {{baseUrl}}/api/cart/{{createProduct.response.body.$.id}}
-Authorization: Bearer {{customerToken}}
+Authorization: Bearer {{loginCustomer.response.body.$.token}}
 Content-Type: application/json
 
 {
@@ -98,33 +126,33 @@ Content-Type: application/json
 
 ### Remove this product from the cart (Phase 5, not implemented yet)
 DELETE {{baseUrl}}/api/cart/{{createProduct.response.body.$.id}}
-Authorization: Bearer {{customerToken}}
+Authorization: Bearer {{loginCustomer.response.body.$.token}}
 
 ### Clear the cart (Phase 5, not implemented yet)
 DELETE {{baseUrl}}/api/cart
-Authorization: Bearer {{customerToken}}
+Authorization: Bearer {{loginCustomer.response.body.$.token}}
 
 ### Place an order from the customer's cart (Phase 6, not implemented yet)
 # The server should calculate totals from the cart; do not send a client total.
 # @name placeOrder
 POST {{baseUrl}}/api/orders
-Authorization: Bearer {{customerToken}}
+Authorization: Bearer {{loginCustomer.response.body.$.token}}
 
 ### List the customer's orders (Phase 6, not implemented yet)
 GET {{baseUrl}}/api/orders
-Authorization: Bearer {{customerToken}}
+Authorization: Bearer {{loginCustomer.response.body.$.token}}
 
 ### Get the order created above (Phase 6, not implemented yet)
 GET {{baseUrl}}/api/orders/{{placeOrder.response.body.$.id}}
-Authorization: Bearer {{customerToken}}
+Authorization: Bearer {{loginCustomer.response.body.$.token}}
 
 ### List all orders (admin, Phase 6, not implemented yet)
 GET {{baseUrl}}/api/admin/orders
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
 
 ### Update the order status (admin, Phase 6, not implemented yet)
 PATCH {{baseUrl}}/api/admin/orders/{{placeOrder.response.body.$.id}}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
 Content-Type: application/json
 
 {
@@ -134,4 +162,4 @@ Content-Type: application/json
 ### Delete the test product (Phase 3, admin only)
 # Run this last. It will fail with 409 if an order references the product.
 DELETE {{baseUrl}}/api/products/{{createProduct.response.body.$.id}}
-Authorization: Bearer {{adminToken}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
