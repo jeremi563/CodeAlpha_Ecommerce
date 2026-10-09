@@ -1,21 +1,19 @@
 import * as cartService from '../services/cart.service.js';
-
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { cartItemSchema, cartQuantitySchema, parseBody, parseStringParam, productIdSchema } from '../utils/validators.js';
 
 function validProductId(req, res) {
-    if (uuidPattern.test(req.params.productId)) return true;
-    res.status(400).json({ message: 'Product id must be a valid UUID' });
-    return false;
+    const parsed = parseStringParam(productIdSchema, req.params.productId, 'Product id must be a valid UUID');
+    if (parsed.error) {
+        res.status(400).json({ message: parsed.error });
+        return false;
+    }
+    return true;
 }
 
 function readQuantity(body) {
-    if (!body || typeof body !== 'object' || Array.isArray(body)) {
-        return { error: 'Request body must be a JSON object' };
-    }
-    if (!Number.isInteger(body.quantity) || body.quantity < 1) {
-        return { error: 'quantity must be a positive integer' };
-    }
-    return { quantity: body.quantity };
+    const parsed = parseBody(cartQuantitySchema, body);
+    if (parsed.error) return { error: parsed.error };
+    return { quantity: parsed.data.quantity };
 }
 
 function sendCartError(error, res) {
@@ -49,14 +47,11 @@ export async function getCart(req, res) {
 }
 
 export async function addItem(req, res) {
-    const { quantity, error } = readQuantity(req.body);
-    if (error) return res.status(400).json({ message: error });
-    if (typeof req.body.productId !== 'string' || !uuidPattern.test(req.body.productId)) {
-        return res.status(400).json({ message: 'productId must be a valid UUID' });
-    }
+    const parsed = parseBody(cartItemSchema, req.body);
+    if (parsed.error) return res.status(400).json({ message: parsed.error });
 
     try {
-        const item = await cartService.addItem(req.user.sub, req.body.productId, quantity);
+        const item = await cartService.addItem(req.user.sub, parsed.data.productId, parsed.data.quantity);
         return res.status(200).json({ item });
     } catch (error) {
         return sendCartError(error, res);

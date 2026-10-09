@@ -1,37 +1,17 @@
 import * as authService from '../services/auth.service.js';
 import { createToken } from '../utils/jwt.js';
+import { loginSchema, parseBody, registerSchema } from '../utils/validators.js';
 
 function readCredentials(body, isRegistration = false) {
-    if (!body || typeof body !== 'object' || Array.isArray(body)) {
-        return { error: 'Request body must be a JSON object' };
-    }
-
-    const { name, email, password } = body;
-    if (typeof email !== 'string' || typeof password !== 'string') {
-        return { error: 'email and password are required' };
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-        return { error: 'email must be a valid email address' };
-    }
-
-    if (isRegistration) {
-        if (typeof name !== 'string' || !name.trim() || name.trim().length > 80) {
-            return { error: 'name must be between 1 and 80 characters' };
-        }
-        if (password.length < 8 || Buffer.byteLength(password, 'utf8') > 72) {
-            return { error: 'password must be at least 8 characters and no more than 72 bytes' };
-        }
-    } else if (!password) {
-        return { error: 'email and password are required' };
-    }
+    const schema = isRegistration ? registerSchema : loginSchema;
+    const parsed = parseBody(schema, body);
+    if (parsed.error) return { error: parsed.error };
 
     return {
         credentials: {
-            name: isRegistration ? name.trim() : undefined,
-            email: normalizedEmail,
-            password,
+            ...(isRegistration ? { name: parsed.data.name } : {}),
+            email: parsed.data.email,
+            password: parsed.data.password,
         },
     };
 }

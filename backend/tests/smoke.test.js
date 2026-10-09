@@ -98,7 +98,7 @@ test.before(async () => {
     description: 'A product created during the phase 8 smoke test.',
     price: 2999.99,
     stock: 4,
-    imageUrl: 'https://example.com/images/phase8-product.jpg',
+    imageUrl: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=900&q=80',
   };
 
   const productResponse = await request('/api/products', {
@@ -151,6 +151,7 @@ test('public product listing and detail requests work', async () => {
   const detailResult = await request(`/api/products/${createdProductId}`);
   assert.equal(detailResult.status, 200);
   assert.equal(detailResult.data.id, createdProductId);
+  assert.equal(detailResult.data.imageUrl, 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=900&q=80');
 });
 
 test('authentication rejects invalid credentials and returns user data', async () => {

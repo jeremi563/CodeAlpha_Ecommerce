@@ -19,6 +19,12 @@
         <label>Price (Ksh)<input name="price" type="number" min="0" step="0.01" required></label>
         <label>Opening stock<input name="stock" type="number" min="0" step="1" value="0" required></label>
         <label>Image URL<input name="imageUrl" type="url" placeholder="https://…"></label>
+        <label>Upload image<input name="imageUpload" type="file" accept="image/*"></label>
+        <div class="image-preview-box wide-field" id="image-preview-box" aria-live="polite">
+          <span class="image-preview-label">Selected image preview</span>
+          <img id="image-preview" alt="Selected product preview" hidden>
+          <p id="image-preview-empty">No image selected yet.</p>
+        </div>
         <label class="wide-field">Description<textarea name="description" rows="2"></textarea></label>
         <button class="button button-dark" type="submit">Add product <span aria-hidden="true">+</span></button>
       </form>

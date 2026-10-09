@@ -5,6 +5,8 @@ const message = document.querySelector('#admin-message');
 const productList = document.querySelector('#admin-products');
 const orderList = document.querySelector('#admin-orders');
 const productForm = document.querySelector('#product-form');
+const imagePreview = document.querySelector('#image-preview');
+const imagePreviewEmpty = document.querySelector('#image-preview-empty');
 const orderStatuses = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
 
 if (!getSession()?.token) {
@@ -16,12 +18,42 @@ if (!getSession()?.token) {
       message.textContent = 'Admin access is required to view the store desk.';
       productForm.remove();
     } else {
+      bindImagePreview();
       await refreshAdminData();
       productForm.addEventListener('submit', createProduct);
     }
   } catch (error) {
     message.textContent = error.message;
   }
+}
+
+function bindImagePreview() {
+  const imageUploadField = productForm.elements.imageUpload;
+  if (!imageUploadField) return;
+
+  imageUploadField.addEventListener('change', async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      imagePreview.hidden = true;
+      imagePreviewEmpty.hidden = false;
+      imagePreview.removeAttribute('src');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Image files must be 5MB or smaller.', true);
+      imageUploadField.value = '';
+      imagePreview.hidden = true;
+      imagePreviewEmpty.hidden = false;
+      imagePreview.removeAttribute('src');
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    imagePreview.src = objectUrl;
+    imagePreview.hidden = false;
+    imagePreviewEmpty.hidden = true;
+  });
 }
 
 async function refreshAdminData() {
@@ -33,24 +65,49 @@ async function refreshAdminData() {
   renderOrders(orders);
 }
 
+async function readImageFile(file) {
+  if (!file) return null;
+
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error('Image files must be 5MB or smaller.');
+  }
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+    reader.onerror = () => reject(new Error('Could not read the selected image.'));
+    reader.readAsDataURL(file);
+  });
+}
+
 async function createProduct(event) {
   event.preventDefault();
   const button = productForm.querySelector('button');
   button.disabled = true;
   message.textContent = '';
   const form = new FormData(productForm);
-  const data = {
-    name: form.get('name').trim(),
-    price: Number(form.get('price')),
-    stock: Number(form.get('stock')),
-    description: form.get('description').trim() || null,
-    imageUrl: form.get('imageUrl').trim() || null,
-  };
+  const imageUpload = form.get('imageUpload');
+  const imageUrlValue = String(form.get('imageUrl') || '').trim();
 
   try {
+    const finalImageUrl = imageUpload && imageUpload instanceof File && imageUpload.size > 0
+      ? await readImageFile(imageUpload)
+      : imageUrlValue || null;
+
+    const data = {
+      name: String(form.get('name') || '').trim(),
+      price: Number(form.get('price')),
+      stock: Number(form.get('stock')),
+      description: String(form.get('description') || '').trim() || null,
+      imageUrl: finalImageUrl,
+    };
+
     await api('/api/products', { method: 'POST', body: JSON.stringify(data) });
     productForm.reset();
     productForm.elements.stock.value = '0';
+    imagePreview.hidden = true;
+    imagePreviewEmpty.hidden = false;
+    imagePreview.removeAttribute('src');
     message.textContent = 'Product added to the collection.';
     message.classList.add('success');
     await refreshAdminData();

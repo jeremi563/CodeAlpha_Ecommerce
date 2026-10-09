@@ -206,6 +206,10 @@ h2 { margin-bottom: 0; font-size: clamp(24px, 3vw, 34px); line-height: 1.15; }
 .admin-product-form .wide-field { grid-column: span 3; }
 .admin-product-form textarea { resize: vertical; }
 .admin-product-form .button { min-height: 43px; }
+.image-preview-box { display: grid; gap: 8px; border: 1px solid var(--line); background: #fbfbf9; padding: 12px; }
+.image-preview-label { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+#image-preview { width: 100%; max-height: 180px; object-fit: cover; border: 1px solid var(--line); background: var(--soft-green); }
+#image-preview-empty { margin: 0; color: var(--muted); font-size: 11px; }
 .admin-table-wrap { overflow-x: auto; border: 1px solid var(--line); background: white; }
 .admin-table { width: 100%; border-collapse: collapse; text-align: left; }
 .admin-table th, .admin-table td { border-bottom: 1px solid var(--line); padding: 12px 13px; font-size: 11px; vertical-align: middle; }

@@ -71,10 +71,9 @@ export function productImage(value) {
 
   try {
     const url = new URL(trimmed);
-    const localHosts = new Set(['localhost', '127.0.0.1', '[::1]']);
-    if (!['http:', 'https:'].includes(url.protocol)) return fallbackImage;
-    if (localHosts.has(url.hostname) || url.origin === location.origin) return url.href;
-    return fallbackImage;
+    const allowedProtocols = new Set(['http:', 'https:', 'data:', 'blob:']);
+    if (!allowedProtocols.has(url.protocol)) return fallbackImage;
+    return url.href;
   } catch {
     return fallbackImage;
   }

@@ -1,12 +1,15 @@
 import * as orderService from '../services/order.service.js';
+import { orderIdSchema, orderStatusSchema, parseBody, parseStringParam } from '../utils/validators.js';
 
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const orderStatuses = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
 
 function validOrderId(req, res) {
-    if (uuidPattern.test(req.params.id)) return true;
-    res.status(400).json({ message: 'Order id must be a valid UUID' });
-    return false;
+    const parsed = parseStringParam(orderIdSchema, req.params.id, 'Order id must be a valid UUID');
+    if (parsed.error) {
+        res.status(400).json({ message: parsed.error });
+        return false;
+    }
+    return true;
 }
 
 function sendOrderError(error, res) {
@@ -64,12 +67,14 @@ export async function listAllOrders(req, res) {
 
 export async function updateOrderStatus(req, res) {
     if (!validOrderId(req, res)) return;
-    if (!req.body || typeof req.body.status !== 'string' || !orderStatuses.includes(req.body.status)) {
-        return res.status(400).json({ message: `status must be one of: ${orderStatuses.join(', ')}` });
+
+    const parsed = parseBody(orderStatusSchema, req.body);
+    if (parsed.error) {
+        return res.status(400).json({ message: parsed.error });
     }
 
     try {
-        const order = await orderService.updateOrderStatus(req.params.id, req.body.status);
+        const order = await orderService.updateOrderStatus(req.params.id, parsed.data.status);
         return res.json({ order });
     } catch (error) {
         return sendOrderError(error, res);
