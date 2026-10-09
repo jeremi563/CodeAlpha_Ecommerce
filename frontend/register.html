@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f6f2">
+  <title>Create an account | Nexora Store</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script type="module" src="/js/auth.js"></script>
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="auth-layout wrap">
+    <section class="auth-image auth-image-register"><div class="auth-image-label"><span>TAKE THE LONG WAY</span><span>GO AT YOUR OWN PACE</span></div></section>
+    <section class="auth-panel"><p class="eyebrow">A good place to start</p><h1>Make it yours.</h1><p class="muted">Create an account to keep your orders close.</p>
+      <form id="register-form" class="stack-form">
+        <label>Your name<input name="name" type="text" autocomplete="name" maxlength="80" required></label>
+        <label>Email address<input name="email" type="email" autocomplete="email" required></label>
+        <label>Password<input name="password" type="password" autocomplete="new-password" minlength="8" required><small>Use at least 8 characters.</small></label>
+        <p class="form-message" aria-live="polite"></p>
+        <button class="button button-dark button-full" type="submit">Create account <span aria-hidden="true">→</span></button>
+      </form>
+      <p class="auth-switch">Already have an account? <a href="/login.html">Sign in</a></p>
+    </section>
+  </main>
+  <div id="site-footer"></div>
+</body>
+</html>

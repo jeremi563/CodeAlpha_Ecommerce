@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f6f2">
+  <title>Store desk | Nexora Store</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script type="module" src="/js/admin.js"></script>
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="wrap page-main admin-main">
+    <div class="page-heading"><div><p class="eyebrow">Store operations</p><h1>The store desk<span class="heading-period">.</span></h1></div><span class="admin-indicator">ADMIN</span></div>
+    <p id="admin-message" class="form-message" aria-live="polite"></p>
+    <section class="admin-section"><div class="section-heading"><div><p class="eyebrow">Inventory</p><h2>Add a product</h2></div></div>
+      <form id="product-form" class="admin-product-form">
+        <label>Product name<input name="name" required maxlength="120"></label>
+        <label>Price (Ksh)<input name="price" type="number" min="0" step="0.01" required></label>
+        <label>Opening stock<input name="stock" type="number" min="0" step="1" value="0" required></label>
+        <label>Image URL<input name="imageUrl" type="url" placeholder="https://…"></label>
+        <label class="wide-field">Description<textarea name="description" rows="2"></textarea></label>
+        <button class="button button-dark" type="submit">Add product <span aria-hidden="true">+</span></button>
+      </form>
+    </section>
+    <section class="admin-section"><div class="section-heading"><div><p class="eyebrow">Current collection</p><h2>Products</h2></div></div><div id="admin-products" class="admin-table-wrap"></div></section>
+    <section class="admin-section"><div class="section-heading"><div><p class="eyebrow">Fulfilment</p><h2>Recent orders</h2></div></div><div id="admin-orders" class="admin-table-wrap"></div></section>
+  </main>
+  <div id="site-footer"></div>
+</body>
+</html>
