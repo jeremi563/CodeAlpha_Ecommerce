@@ -287,21 +287,89 @@ test('admin can list and update orders, and validation rejects bad stock request
   assert.match(String(stockError.data.message || ''), /exceeds available stock|insufficient stock/i);
 });
 
-test('mpesa stk push route accepts a valid phone number in sandbox mode', async () => {
-  const response = await request('/api/payments/mpesa/stk-push', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${customerToken}` },
-    body: JSON.stringify({
-      phone: '254712345678',
-      amount: 2000,
-      accountReference: 'NEXORA-TEST',
-      transactionDesc: 'Test order payment',
-    }),
-  });
+test('mpesa stk push route performs a real sandbox request with token caching', async () => {
+  const axios = await import('axios');
+  const originalGet = axios.default.get;
+  const originalPost = axios.default.post;
+  let getCalls = 0;
+  let postCalls = 0;
 
-  assert.equal(response.status, 200);
-  assert.equal(response.data.status, 'PENDING');
-  assert.ok(response.data.checkoutRequestId);
+  axios.default.get = async (...args) => {
+    getCalls += 1;
+    return {
+      data: {
+        access_token: 'sandbox-token-123',
+        expires_in: 3600,
+      },
+    };
+  };
+
+  axios.default.post = async (...args) => {
+    postCalls += 1;
+    return {
+      data: {
+        ResponseCode: '0',
+        CheckoutRequestID: 'ws_CO_sandbox_123',
+        MerchantRequestID: 'mr_sandbox_123',
+        CustomerMessage: 'Success',
+      },
+    };
+  };
+
+  try {
+    const order = await prisma.order.create({
+      data: {
+        userId: createdCustomerId,
+        total: '2000.00',
+        status: 'PENDING',
+        items: {
+          create: {
+            productId: createdProductId,
+            productName: 'M-Pesa sandbox item',
+            unitPrice: '2000.00',
+            quantity: 1,
+            subtotal: '2000.00',
+          },
+        },
+      },
+    });
+
+    const first = await request('/api/payments/mpesa/stk-push', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${customerToken}` },
+      body: JSON.stringify({
+        orderId: order.id,
+        phone: '254712345678',
+        amount: 2000,
+        accountReference: 'NEXORA-TEST',
+        transactionDesc: 'Test order payment',
+      }),
+    });
+
+    const second = await request('/api/payments/mpesa/stk-push', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${customerToken}` },
+      body: JSON.stringify({
+        orderId: order.id,
+        phone: '254712345678',
+        amount: 2000,
+        accountReference: 'NEXORA-TEST',
+        transactionDesc: 'Test order payment',
+      }),
+    });
+
+    assert.equal(first.status, 200);
+    assert.equal(first.data.status, 'PENDING');
+    assert.equal(first.data.checkoutRequestId, 'ws_CO_sandbox_123');
+    assert.equal(second.status, 200);
+    assert.equal(second.data.checkoutRequestId, 'ws_CO_sandbox_123');
+    assert.equal(getCalls, 1);
+    assert.equal(postCalls, 2);
+    assert.equal(Number((await prisma.payment.findUnique({ where: { checkoutRequestId: 'ws_CO_sandbox_123' } })).amount), 2000);
+  } finally {
+    axios.default.get = originalGet;
+    axios.default.post = originalPost;
+  }
 });
 
 test('M-Pesa callback confirms an order once and ignores duplicate callbacks', async () => {

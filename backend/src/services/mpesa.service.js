@@ -4,6 +4,9 @@ import { randomUUID } from 'node:crypto';
 import { getMpesaBaseUrl, getMpesaCallbackUrl, getMpesaConfig, hasCallbackToken, hasPublicCallbackUrl, isMpesaConfigured, normalizePhoneNumber } from '../config/mpesa.js';
 import prisma from '../config/prisma.js';
 
+const TOKEN_TTL_MS = 55 * 60 * 1000;
+let mpesaTokenCache = { token: null, expiresAt: 0 };
+
 function toTimestamp(date = new Date()) {
   return new Date(date).toISOString().replace(/[-:TZ.]/g, '').slice(0, 14);
 }
@@ -12,10 +15,23 @@ function buildPassword(shortCode, passKey, timestamp) {
   return Buffer.from(`${shortCode}${passKey}${timestamp}`).toString('base64');
 }
 
+function normalizeRequestAmount(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return null;
+  }
+  return Math.round(numeric);
+}
+
 async function getAccessToken() {
   const config = getMpesaConfig();
   if (!isMpesaConfigured()) {
     return null;
+  }
+
+  const now = Date.now();
+  if (mpesaTokenCache.token && now < mpesaTokenCache.expiresAt) {
+    return mpesaTokenCache.token;
   }
 
   const response = await axios.get(`${getMpesaBaseUrl()}/oauth/v1/generate?grant_type=client_credentials`, {
@@ -23,35 +39,46 @@ async function getAccessToken() {
       username: config.consumerKey,
       password: config.consumerSecret,
     },
+    timeout: 10000,
   });
 
-  return response.data.access_token;
+  const token = response.data?.access_token;
+  if (!token) {
+    throw new Error('M-Pesa credentials did not return an access token');
+  }
+
+  const expiresIn = Number(response.data?.expires_in || 3600);
+  mpesaTokenCache = {
+    token,
+    expiresAt: now + Math.max(0, expiresIn - 60) * 1000,
+  };
+
+  return token;
 }
 
 export async function initiateStkPush({ userId, orderId, phone, amount, accountReference, transactionDesc }) {
   const normalizedPhone = normalizePhoneNumber(phone);
-  let amountValue = Number(amount);
   const config = getMpesaConfig();
-  const sandboxMode = config.enabled && config.environment === 'sandbox';
 
   if (!normalizedPhone) {
     throw new Error('phone number is required');
   }
 
-  if (!config.enabled || sandboxMode) {
-    if (!Number.isFinite(amountValue) || amountValue <= 0) {
+  if (!config.enabled) {
+    const amountValue = normalizeRequestAmount(amount);
+    if (amountValue === null) {
       throw new Error('amount must be a positive number');
     }
     return {
       status: 'PENDING',
       checkoutRequestId: `SIM-${randomUUID()}`,
       merchantRequestId: `SIM-${randomUUID()}`,
-      customerMessage: 'M-Pesa sandbox mode is active. No live request was sent.',
+      customerMessage: 'M-Pesa is disabled. No live request was sent.',
       phone: normalizedPhone,
       amount: amountValue,
       accountReference: String(accountReference || 'NEXORA'),
       transactionDesc: String(transactionDesc || 'Nexora Store purchase'),
-      mode: 'sandbox',
+      mode: 'disabled',
     };
   }
 
@@ -61,7 +88,7 @@ export async function initiateStkPush({ userId, orderId, phone, amount, accountR
   if (!hasPublicCallbackUrl()) {
     throw new Error('MPESA_CALLBACK_URL must be a public HTTPS URL');
   }
-  if (!hasCallbackToken()) {
+  if (config.environment === 'production' && !hasCallbackToken()) {
     throw new Error('MPESA_CALLBACK_TOKEN must contain at least 32 characters');
   }
   if (!userId || !orderId) {
@@ -74,7 +101,11 @@ export async function initiateStkPush({ userId, orderId, phone, amount, accountR
   });
   if (!order) throw new Error('ORDER_NOT_FOUND');
   if (order.status !== 'PENDING') throw new Error('ORDER_NOT_PAYABLE');
-  amountValue = Number(order.total);
+
+  const requestAmount = normalizeRequestAmount(order.total ?? amount);
+  if (requestAmount === null) {
+    throw new Error('amount must be a positive number');
+  }
 
   const timestamp = toTimestamp();
   const password = buildPassword(config.shortCode, config.passKey, timestamp);
@@ -92,7 +123,7 @@ export async function initiateStkPush({ userId, orderId, phone, amount, accountR
       Password: password,
       Timestamp: timestamp,
       TransactionType: 'CustomerPayBillOnline',
-      Amount: Math.round(amountValue),
+      Amount: requestAmount,
       PartyA: normalizedPhone,
       PartyB: config.shortCode,
       PhoneNumber: normalizedPhone,
@@ -105,28 +136,44 @@ export async function initiateStkPush({ userId, orderId, phone, amount, accountR
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
+      timeout: 10000,
     },
   );
 
-  if (response.data.ResponseCode !== '0' || !response.data.CheckoutRequestID) {
-    throw new Error(response.data.CustomerMessage || 'Safaricom did not accept the STK push request');
+  const checkoutRequestId = response.data?.CheckoutRequestID ?? response.data?.checkoutRequestId;
+  const merchantRequestId = response.data?.MerchantRequestID ?? response.data?.merchantRequestId;
+
+  if (response.data?.ResponseCode !== '0' || !checkoutRequestId) {
+    throw new Error(response.data?.CustomerMessage || 'Safaricom did not accept the STK push request');
   }
 
-  await prisma.payment.create({
-    data: {
-      orderId: order.id,
-      checkoutRequestId: response.data.CheckoutRequestID,
-      merchantRequestId: response.data.MerchantRequestID,
+  await prisma.payment.upsert({
+    where: { checkoutRequestId },
+    update: {
+      merchantRequestId,
       phone: normalizedPhone,
-      amount: amountValue.toFixed(2),
+      amount: requestAmount.toFixed(2),
+      status: 'PENDING',
+    },
+    create: {
+      orderId: order.id,
+      checkoutRequestId,
+      merchantRequestId,
+      phone: normalizedPhone,
+      amount: requestAmount.toFixed(2),
     },
   });
 
   return {
     status: 'PENDING',
-    ...response.data,
+    checkoutRequestId,
+    merchantRequestId,
+    customerMessage: response.data?.CustomerMessage || 'M-Pesa request accepted.',
     phone: normalizedPhone,
-    amount: amountValue,
+    amount: requestAmount,
+    accountReference: resolvedAccountReference,
+    transactionDesc: String(transactionDesc || 'Nexora Store purchase'),
+    mode: config.environment === 'sandbox' ? 'sandbox' : 'live',
   };
 }
 
