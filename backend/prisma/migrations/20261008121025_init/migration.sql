@@ -10,8 +10,6 @@ CREATE TYPE "UserRole" AS ENUM ('CUSTOMER', 'ADMIN');
 -- CreateEnum
 CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED');
 
--- DropTable
-DROP TABLE "User";
 
 -- CreateTable
 CREATE TABLE "users" (
