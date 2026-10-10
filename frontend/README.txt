@@ -1,26 +1,40 @@
 NEXORA STORE FRONTEND
 
-This frontend uses plain HTML, CSS, and JavaScript modules. It is served by the
-Express application in the sibling backend directory and uses the backend API
-for products, accounts, carts, orders, and M-Pesa payment requests.
+This frontend is a static HTML/CSS/JavaScript storefront served by the Express
+backend in the sibling backend directory. All product, cart, order, auth, and
+admin data is loaded from the backend API.
 
 START THE APPLICATION
-From the repository root, run:
+From the project root, run:
   cd backend
-  npm start
-Then open http://localhost:5000.
+  npm install
+  cp .env.example .env
+  npm run dev
 
-The backend requires a configured PostgreSQL DATABASE_URL and JWT_SECRET in
-backend/.env. Set up an admin account with the backend seed:admin script.
-Safaricom callback confirmation requires a public HTTPS callback URL and the
-M-Pesa credentials and callback token described in backend/.env.example.
+Then open:
+  http://localhost:5000/
+
+REQUIREMENTS
+- PostgreSQL must be configured in backend/.env
+- JWT_SECRET must be set in backend/.env
+- The backend must be running before the UI can load live store data
+- M-Pesa payment callbacks need a public HTTPS endpoint and credentials in the
+  backend environment file
 
 FRONTEND MODULES
-Each page loads its matching module from js/: home, products, product, cart,
-checkout, auth, orders, or admin. Shared API and navigation helpers live in
-js/api.js and js/site.js. Product and order data shown in the storefront comes
-from the database; the browser does not maintain a separate sample catalog.
+Each page loads a matching script from js/:
+  - home.js
+  - products.js
+  - product.js
+  - cart.js
+  - checkout.js
+  - auth.js
+  - orders.js
+  - admin.js
 
-Product upload previews accept images up to 5 MB. Product image data is sent to
-the product API, which accepts requests up to 8 MB. Other JSON API requests use
-a smaller request-size limit.
+Shared helpers live in js/api.js and js/site.js. The authenticated home page
+redirects logged-in users to the product listing page so they cannot stay on the
+landing screen while signed in.
+
+This project does not keep a separate sample catalog in the browser; product data
+comes from the database and the backend API.

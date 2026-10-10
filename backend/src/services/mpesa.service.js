@@ -32,12 +32,13 @@ export async function initiateStkPush({ userId, orderId, phone, amount, accountR
   const normalizedPhone = normalizePhoneNumber(phone);
   let amountValue = Number(amount);
   const config = getMpesaConfig();
+  const sandboxMode = config.enabled && config.environment === 'sandbox';
 
   if (!normalizedPhone) {
     throw new Error('phone number is required');
   }
 
-  if (!config.enabled) {
+  if (!config.enabled || sandboxMode) {
     if (!Number.isFinite(amountValue) || amountValue <= 0) {
       throw new Error('amount must be a positive number');
     }

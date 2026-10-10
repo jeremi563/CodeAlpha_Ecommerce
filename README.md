@@ -1,172 +1,130 @@
-<div align="center">
+# Nexora Store
 
-  # 🛒 <span style="background: linear-gradient(90deg, #8A2BE2, #00D2FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Nexora Store</span>
+Nexora Store is a full-stack e-commerce web application for browsing products, managing a cart, placing orders, and handling store administration. The app is served from the Express backend and uses PostgreSQL with Prisma for data persistence.
 
-  **A sleek, robust, full-stack E-Commerce REST Application**
+## Features
 
-  [![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
-  [![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
-  [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-  [![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io/)
-  [![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)](https://jwt.io/)
+- User registration and login with JWT authentication
+- Role-based access for customers and admins
+- Public product catalog and product detail pages
+- Cart management and checkout flow
+- Order history for authenticated users
+- Admin product management dashboard
+- M-Pesa payment integration support in sandbox mode
+- Authenticated users are redirected away from the home page to the shop
 
-  ---
+## Tech stack
 
-  <p align="center">
-    <a href="# key-features">Key Features</a> •
-    <a href="#-tech-stack">Tech Stack</a> •
-    <a href="#-architecture">Architecture</a> •
-    <a href="#-api-reference">API Reference</a> •
-    <a href="#-getting-started">Getting Started</a>
-  </p>
+- Frontend: HTML, CSS, vanilla JavaScript
+- Backend: Node.js and Express
+- Database: PostgreSQL
+- ORM: Prisma
+- Authentication: JWT and bcrypt
+- Payments: M-Pesa API integration
 
-</div>
-
----
-
-## 🌟 Overview
-
-**Nexora Store** is a lightweight yet powerful full-stack e-commerce platform built using Node.js, Express, PostgreSQL, and modern vanilla web technologies. Designed with performance, simplicity, and clean architecture in mind, it provides a complete end-to-end shopping experience—from product discovery and dynamic cart management to transactional checkout and order processing.
-
-<br>
-
-<div align="center">
-  <img src="https://via.placeholder.com/800x400/0f0c20/ffffff?text=Nexora+Store+Preview+--+Gradient+Accent+#8A2BE2+to+#00D2FF" alt="Nexora Store Preview" width="100%" style="border-radius: 8px;">
-</div>
-
----
-
-## ✨ Key Features
-
-- 👤 **User Authentication & RBAC**: JWT-based authentication with password hashing (`bcrypt`) supporting both Customer and Admin roles.
-- 🛍️ **Product Catalog**: Dynamic product listings with detail views and stock availability status.
-- 🛒 **Persistent Shopping Cart**: Backend-synchronized cart powered by PostgreSQL (no data loss across devices).
-- ⚙️ **Transactional Order Processing**: Dynamic checkout pipeline executing stock adjustments and order item snapshots inside atomic SQL transactions.
-- 🛡️ **Admin Management**: Dedicated endpoints for inventory management (CRUD products) and storewide order monitoring.
-
----
-
-## 🛠 Tech Stack
-
-<table>
-  <tr>
-    <td align="center" width="20%"><b>Layer</b></td>
-    <td width="80%"><b>Technologies</b></td>
-  </tr>
-  <tr>
-    <td align="center"><b>Frontend</b></td>
-    <td>HTML5, Modern CSS3 (Variables & Gradients), Vanilla JavaScript (Fetch API)</td>
-  </tr>
-  <tr>
-    <td align="center"><b>Backend</b></td>
-    <td>Node.js, Express.js (MVC / Service Layer Pattern)</td>
-  </tr>
-  <tr>
-    <td align="center"><b>Database & ORM</b></td>
-    <td>PostgreSQL, Prisma ORM</td>
-  </tr>
-  <tr>
-    <td align="center"><b>Security</b></td>
-    <td>JSON Web Tokens (JWT), Bcrypt Password Hashing, CORS, Dotenv</td>
-  </tr>
-</table>
-
----
-
-## 🏗 Architecture
-
-The backend follows a strict **Layered Architecture** (Routes → Controllers → Services → Database) to ensure high maintainability and dynamic scalability.
+## Project structure
 
 ```text
-                     BROWSER (Frontend)
-                             │
-                             │ HTTP / REST
-                             ▼
- ┌─────────────────────────────────────────────────────────┐
- │                     EXPRESS BACKEND                     │
- │  ┌────────────┐     ┌─────────────┐     ┌────────────┐  │
- │  │   Routes   │ ──► │ Controllers │ ──► │  Services  │  │
- │  └────────────┘     └─────────────┘     └─────┬──────┘  │
- └───────────────────────────────────────────────┼─────────┘
-                                                 │
-                                                 │ Prisma / SQL
-                                                 ▼
- ┌─────────────────────────────────────────────────────────┐
- │                  POSTGRESQL DATABASE                    │
- │  [Users]   [Products]   [CartItems]   [Orders/Items]    │
- └─────────────────────────────────────────────────────────┘
+CodeAlpha_Ecommerce/
+├── backend/
+│   ├── .env.example
+│   ├── package.json
+│   ├── prisma/
+│   ├── scripts/
+│   └── src/
+├── frontend/
+│   ├── assets/
+│   ├── css/
+│   ├── js/
+│   ├── admin.html
+│   ├── cart.html
+│   ├── checkout.html
+│   ├── index.html
+│   ├── login.html
+│   ├── orders.html
+│   ├── product.html
+│   ├── products.html
+│   ├── register.html
+│   └── README.txt
+├── README.md
+└── .git/
 ```
 
----
+## Prerequisites
 
-## 🔌 API Reference
+- Node.js 18 or newer
+- PostgreSQL running locally or on a remote server
+- A package manager such as npm
 
-### 🔐 Authentication
-| Method | Endpoint | Description | Access |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/api/auth/register` | Register a new user | Public |
-| `POST` | `/api/auth/login` | Authenticate user & get JWT | Public |
-| `GET` | `/api/auth/me` | Fetch current user profile | Authenticated |
+## Local setup
 
-### 📦 Products
-| Method | Endpoint | Description | Access |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/products` | Retrieve all products | Public |
-| `GET` | `/api/products/:id` | Get specific product details | Public |
-| `POST` | `/api/products` | Create product listing | Admin |
-| `PATCH` | `/api/products/:id` | Update product details | Admin |
-| `DELETE`| `/api/products/:id` | Remove a product | Admin |
+1. Clone the repository and go to the project folder:
 
-### 🛒 Cart & Orders
-| Method | Endpoint | Description | Access |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/cart` | View current user's cart | Authenticated |
-| `POST` | `/api/cart` | Add item to cart | Authenticated |
-| `POST` | `/api/orders` | Checkout & place an order | Authenticated |
-| `GET` | `/api/orders` | View user order history | Authenticated |
+```bash
+git clone <your-repository-url>
+cd CodeAlpha_Ecommerce
+```
 
----
+2. Configure the backend environment:
 
-## 🚀 Getting Started
+```bash
+cd backend
+cp .env.example .env
+```
 
-### Prerequisites
-- [Node.js](https://nodejs.org/) (v18+ recommended)
-- [PostgreSQL](https://www.postgresql.org/) database installed and running
+3. Edit the backend `.env` file and set these values:
 
-### Installation & Setup
+```env
+PORT=5000
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/nexora_store"
+JWT_SECRET="replace-with-a-long-random-secret"
+MPESA_ENABLED=false
+MPESA_ENVIRONMENT=sandbox
+```
 
-1. **Clone the Repository**
-   ```bash
-   git clone https://github.com/your-username/CodeAlpha_Ecommerce.git
-   cd CodeAlpha_Ecommerce
-   ```
+4. Install dependencies and generate Prisma client:
 
-2. **Configure Backend Environment**
-   Navigate to the backend directory and set up environment variables:
-   ```bash
-   cd backend
-   cp .env.example .env
-   ```
-   *Update `.env` with your PostgreSQL connection string and a secret key for JWT.*
+```bash
+cd backend
+npm install
+npx prisma generate
+```
 
-3. **Install Dependencies & Run Migrations**
-   ```bash
-   npm install
-   npx prisma migrate dev --name init
-   ```
+5. Apply the database schema:
 
-4. **Start the Development Server**
-   ```bash
-   npm run dev
-   ```
+```bash
+npx prisma migrate dev --name init
+```
 
-5. **Launch Frontend**
-   Open `frontend/index.html` in your browser or run a simple local web server (e.g., Live Server extension).
+6. Start the application:
 
----
+```bash
+npm run dev
+```
 
-<div align="center">
+The app will run at:
 
-  <sub>Crafted with precision for CodeAlpha Full Stack Engineering Task.</sub>
+- Frontend/API base: http://localhost:5000
+- Homepage: http://localhost:5000/
 
-</div>
+## Admin account
+
+Create a default admin account before testing protected admin routes:
+
+```bash
+npm run seed:admin
+```
+
+## Run tests
+
+```bash
+npm test
+```
+
+## Deployment notes
+
+This project is ready for deployment once the environment variables are set in production and the database is reachable. The public app should serve the frontend through the backend server rather than opening static HTML files directly.
+
+## License
+
+This project is intended for educational and portfolio use within the CodeAlpha assignment scope.

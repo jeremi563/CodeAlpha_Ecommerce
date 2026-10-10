@@ -27,7 +27,9 @@ export async function initiatePayment(req, res) {
 
 export async function mpesaCallback(req, res) {
   const config = getMpesaConfig();
-  if (config.enabled) {
+  const requiresTokenValidation = config.enabled && config.environment !== 'sandbox';
+
+  if (requiresTokenValidation) {
     const expected = Buffer.from(config.callbackToken);
     const supplied = Buffer.from(String(req.query.token || ''));
     if (expected.length < 32 || supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) {
