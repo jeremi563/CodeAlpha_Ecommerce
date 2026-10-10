@@ -71,6 +71,21 @@ export const orderStatusSchema = z.object({
   }),
 }).passthrough();
 
+export const mpesaRequestSchema = z.object({
+  orderId: orderIdSchema.optional(),
+  phone: z.string().trim().refine((value) => /^0\d{9}$/.test(value) || /^254\d{9}$/.test(value) || /^\+254\d{9}$/.test(value), {
+    message: 'phone number must be a valid Kenyan mobile number',
+  }).transform((value) => {
+    const cleaned = value.replace(/\s+/g, '').replace(/\+/g, '');
+    if (/^254/.test(cleaned)) return cleaned;
+    if (/^0\d{9}$/.test(cleaned)) return `254${cleaned.slice(1)}`;
+    return cleaned;
+  }),
+  amount: z.coerce.number().min(1, 'amount must be a positive number').optional(),
+  accountReference: z.string().trim().min(1, 'accountReference is required').max(20, 'accountReference is too long').optional().default('NEXORA'),
+  transactionDesc: z.string().trim().min(1, 'transactionDesc is required').max(140, 'transactionDesc is too long').optional().default('Nexora Store purchase'),
+}).passthrough();
+
 export function parseBody(schema, body, fallbackMessage = 'Request body must be a JSON object') {
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return { error: fallbackMessage };

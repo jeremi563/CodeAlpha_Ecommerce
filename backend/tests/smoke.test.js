@@ -14,6 +14,7 @@ let customerToken = '';
 let createdProductId = '';
 let createdCustomerId = '';
 let createdAdminId = '';
+const createdOrderIds = [];
 let server;
 
 async function request(path, options = {}) {
@@ -120,6 +121,10 @@ test.after(async () => {
         else resolve();
       });
     });
+  }
+
+  if (createdOrderIds.length) {
+    await prisma.order.deleteMany({ where: { id: { in: createdOrderIds } } }).catch(() => {});
   }
 
   if (createdProductId) {
@@ -243,4 +248,130 @@ test('admin can list and update orders, and validation rejects bad stock request
 
   assert.equal(stockError.status, 409);
   assert.match(String(stockError.data.message || ''), /exceeds available stock|insufficient stock/i);
+});
+
+test('mpesa stk push route accepts a valid phone number in sandbox mode', async () => {
+  const response = await request('/api/payments/mpesa/stk-push', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${customerToken}` },
+    body: JSON.stringify({
+      phone: '254712345678',
+      amount: 2000,
+      accountReference: 'NEXORA-TEST',
+      transactionDesc: 'Test order payment',
+    }),
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(response.data.status, 'PENDING');
+  assert.ok(response.data.checkoutRequestId);
+});
+
+test('M-Pesa callback confirms an order once and ignores duplicate callbacks', async () => {
+  const order = await prisma.order.create({
+    data: {
+      userId: createdCustomerId,
+      total: '2000.00',
+      items: {
+        create: {
+          productId: createdProductId,
+          productName: 'M-Pesa callback test item',
+          unitPrice: '2000.00',
+          quantity: 1,
+          subtotal: '2000.00',
+        },
+      },
+    },
+  });
+  createdOrderIds.push(order.id);
+
+  await prisma.payment.create({
+    data: {
+      orderId: order.id,
+      checkoutRequestId: 'ws_CO_callback_success',
+      merchantRequestId: 'mr_callback_success',
+      phone: '254712345678',
+      amount: '2000.00',
+    },
+  });
+
+  const callback = {
+    Body: {
+      stkCallback: {
+        MerchantRequestID: 'mr_callback_success',
+        CheckoutRequestID: 'ws_CO_callback_success',
+        ResultCode: 0,
+        ResultDesc: 'The service request is processed successfully.',
+        CallbackMetadata: {
+          Item: [
+            { Name: 'Amount', Value: 2000 },
+            { Name: 'MpesaReceiptNumber', Value: 'QWE123TEST' },
+            { Name: 'PhoneNumber', Value: 254712345678 },
+          ],
+        },
+      },
+    },
+  };
+
+  const response = await request('/api/payments/mpesa/callback', {
+    method: 'POST',
+    body: JSON.stringify(callback),
+  });
+  const duplicate = await request('/api/payments/mpesa/callback', {
+    method: 'POST',
+    body: JSON.stringify(callback),
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(duplicate.status, 200);
+  assert.equal((await prisma.payment.findUnique({ where: { checkoutRequestId: 'ws_CO_callback_success' } })).status, 'SUCCEEDED');
+  assert.equal((await prisma.order.findUnique({ where: { id: order.id } })).status, 'PROCESSING');
+});
+
+test('M-Pesa failed callbacks do not mark orders as processing', async () => {
+  const originalProduct = await prisma.product.findUnique({ where: { id: createdProductId } });
+  await prisma.product.update({ where: { id: createdProductId }, data: { stock: { decrement: 1 } } });
+  const order = await prisma.order.create({
+    data: {
+      userId: createdCustomerId,
+      total: '1000.00',
+      items: {
+        create: {
+          productId: createdProductId,
+          productName: 'M-Pesa failed callback test item',
+          unitPrice: '1000.00',
+          quantity: 1,
+          subtotal: '1000.00',
+        },
+      },
+    },
+  });
+  createdOrderIds.push(order.id);
+
+  await prisma.payment.create({
+    data: {
+      orderId: order.id,
+      checkoutRequestId: 'ws_CO_callback_failed',
+      phone: '254712345678',
+      amount: '1000.00',
+    },
+  });
+
+  const response = await request('/api/payments/mpesa/callback', {
+    method: 'POST',
+    body: JSON.stringify({
+      Body: {
+        stkCallback: {
+          CheckoutRequestID: 'ws_CO_callback_failed',
+          ResultCode: 1032,
+          ResultDesc: 'Request cancelled by user',
+        },
+      },
+    }),
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal((await prisma.payment.findUnique({ where: { checkoutRequestId: 'ws_CO_callback_failed' } })).status, 'FAILED');
+  assert.equal((await prisma.order.findUnique({ where: { id: order.id } })).status, 'CANCELLED');
+  assert.equal((await prisma.product.findUnique({ where: { id: createdProductId } })).stock, originalProduct.stock);
 });

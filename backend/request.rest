@@ -140,6 +140,65 @@ Authorization: Bearer {{loginCustomer.response.body.$.token}}
 POST {{baseUrl}}/api/orders
 Authorization: Bearer {{loginCustomer.response.body.$.token}}
 
+### Add the test product for M-Pesa payment (Phase 9)
+# Run this before creating the M-Pesa test order. The earlier cart examples clear the cart.
+POST {{baseUrl}}/api/cart
+Authorization: Bearer {{loginCustomer.response.body.$.token}}
+Content-Type: application/json
+
+{
+	"productId": "{{createProduct.response.body.$.id}}",
+	"quantity": 1
+}
+
+### Create an order to pay for with M-Pesa (Phase 9)
+# In live mode, use this order ID for the STK request. The server uses its stored total.
+# @name createMpesaOrder
+POST {{baseUrl}}/api/orders
+Authorization: Bearer {{loginCustomer.response.body.$.token}}
+
+### Send an M-Pesa STK push (Phase 9)
+# With MPESA_ENABLED=false this returns a sandbox simulation and sends no real prompt.
+# With MPESA_ENABLED=true, Safaricom sends an STK prompt to the phone number below.
+# @name mpesaStkPush
+POST {{baseUrl}}/api/payments/mpesa/stk-push
+Authorization: Bearer {{loginCustomer.response.body.$.token}}
+Content-Type: application/json
+
+{
+	"orderId": "{{createMpesaOrder.response.body.$.order.id}}",
+	"phone": "254712345678",
+	"amount": "{{createMpesaOrder.response.body.$.order.total}}",
+	"accountReference": "NEXORA-TEST",
+	"transactionDesc": "Test order payment"
+}
+
+### M-Pesa callback route smoke test (Phase 9)
+# This unknown request ID is acknowledged but cannot change an order or payment.
+# For live mode, append ?token={{mpesaCallbackToken}} and set that REST Client variable locally.
+POST {{baseUrl}}/api/payments/mpesa/callback
+Content-Type: application/json
+
+{
+	"Body": {
+		"stkCallback": {
+			"CheckoutRequestID": "unmatched-rest-smoke-test",
+			"ResultCode": 0,
+			"ResultDesc": "Smoke test callback"
+		}
+	}
+}
+
+### Invalid M-Pesa phone example (expect 400)
+POST {{baseUrl}}/api/payments/mpesa/stk-push
+Authorization: Bearer {{loginCustomer.response.body.$.token}}
+Content-Type: application/json
+
+{
+	"phone": "254700581291",
+	"amount": 2000
+}
+
 ### List the customer's orders (Phase 6)
 GET {{baseUrl}}/api/orders
 Authorization: Bearer {{loginCustomer.response.body.$.token}}

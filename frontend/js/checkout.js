@@ -2,6 +2,7 @@ import { api, formatPrice, getSession, showToast } from './api.js';
 import './site.js';
 
 const content = document.querySelector('#checkout-content');
+let pendingOrderId = '';
 
 if (!getSession()?.token) {
   location.replace(`/login.html?next=${encodeURIComponent('/checkout.html')}`);
@@ -21,7 +22,10 @@ async function loadSummary() {
       <div class="checkout-item"><span>${escapeText(product.name)} × ${quantity}</span><strong>${formatPrice(Number(product.price) * quantity)}</strong></div>`).join('');
     content.innerHTML = `
       <div class="checkout-lines">${lines}<div class="summary-total"><span>Total</span><span>${formatPrice(cart.total)}</span></div></div>
-      <aside class="summary-panel"><h2>Ready when you are.</h2><p class="summary-caption">We’ll confirm stock and calculate your final order directly from the store database. Your cart will only clear if the order succeeds.</p><p class="form-message" id="checkout-message" aria-live="polite"></p><button class="button button-dark button-full" id="place-order" type="button">Place order <span aria-hidden="true">→</span></button></aside>`;
+      <aside class="summary-panel"><h2>Ready when you are.</h2><p class="summary-caption">Pay securely with M-Pesa STK push. We’ll also place your order as soon as the payment request is accepted.</p><label class="stack-form" style="margin-bottom: 12px;">
+        <span>Phone number</span>
+        <input id="mpesa-phone" type="tel" inputmode="tel" value="2547" placeholder="254712345678" required>
+      </label><p class="form-message" id="checkout-message" aria-live="polite"></p><button class="button button-dark button-full" id="place-order" type="button">Pay with M-Pesa <span aria-hidden="true">→</span></button></aside>`;
 
     content.querySelector('#place-order').addEventListener('click', placeOrder);
   } catch (error) {
@@ -32,13 +36,42 @@ async function loadSummary() {
 async function placeOrder(event) {
   const button = event.currentTarget;
   const message = content.querySelector('#checkout-message');
+  const phoneInput = content.querySelector('#mpesa-phone');
   button.disabled = true;
   message.textContent = '';
 
   try {
-    const result = await api('/api/orders', { method: 'POST' });
-    const order = result.order;
-    content.innerHTML = `<div class="checkout-success"><strong>Order placed.</strong>Your order number is ${escapeText(order.id)}.</div><div class="summary-panel"><div class="summary-total"><span>Order total</span><span>${formatPrice(order.total)}</span></div><a class="button button-dark button-full" href="/orders.html">View your orders <span aria-hidden="true">→</span></a></div>`;
+    const phone = String(phoneInput.value || '').trim();
+    if (!/^0\d{9}$/.test(phone) && !/^254\d{9}$/.test(phone) && !/^\+254\d{9}$/.test(phone)) {
+      throw new Error('Enter a valid Kenyan mobile number, for example 254712345678');
+    }
+
+    const cart = await api('/api/cart');
+    if (!pendingOrderId) {
+      const orderResult = await api('/api/orders', { method: 'POST' });
+      pendingOrderId = orderResult.order.id;
+    }
+
+    const payment = await api('/api/payments/mpesa/stk-push', {
+      method: 'POST',
+      body: JSON.stringify({
+        orderId: pendingOrderId,
+        phone,
+        amount: Number(cart.total),
+        accountReference: 'NEXORA',
+        transactionDesc: 'Nexora Store purchase',
+      }),
+    });
+
+    content.innerHTML = `
+      <div class="checkout-success">
+        <strong>Payment request sent.</strong>
+        A prompt has been sent to ${escapeText(payment.phone)}. Your order number is ${escapeText(pendingOrderId)}.
+      </div>
+      <div class="summary-panel">
+        <div class="summary-total"><span>Order total</span><span>${formatPrice(payment.amount)}</span></div>
+        <a class="button button-dark button-full" href="/orders.html">View your orders <span aria-hidden="true">→</span></a>
+      </div>`;
     window.dispatchEvent(new Event('cart-updated'));
   } catch (error) {
     message.textContent = error.message;
