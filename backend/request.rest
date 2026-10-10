@@ -139,6 +139,16 @@ Authorization: Bearer {{loginCustomer.response.body.$.token}}
 # @name placeOrder
 POST {{baseUrl}}/api/orders
 Authorization: Bearer {{loginCustomer.response.body.$.token}}
+Content-Type: application/json
+
+{
+	"recipientName": "Jordan Customer",
+	"deliveryPhone": "0712345678",
+	"deliveryAddress": "12 Market Street, Apartment 4",
+	"deliveryCity": "Nairobi",
+	"deliveryCounty": "Nairobi",
+	"deliveryInstructions": "Call on arrival"
+}
 
 ### Add the test product for M-Pesa payment (Phase 9)
 # Run this before creating the M-Pesa test order. The earlier cart examples clear the cart.
@@ -156,6 +166,16 @@ Content-Type: application/json
 # @name createMpesaOrder
 POST {{baseUrl}}/api/orders
 Authorization: Bearer {{loginCustomer.response.body.$.token}}
+Content-Type: application/json
+
+{
+	"recipientName": "Jordan Customer",
+	"deliveryPhone": "0712345678",
+	"deliveryAddress": "12 Market Street, Apartment 4",
+	"deliveryCity": "Nairobi",
+	"deliveryCounty": "Nairobi",
+	"deliveryInstructions": "Call on arrival"
+}
 
 ### Send an M-Pesa STK push (Phase 9)
 # With MPESA_ENABLED=false this returns a sandbox simulation and sends no real prompt.

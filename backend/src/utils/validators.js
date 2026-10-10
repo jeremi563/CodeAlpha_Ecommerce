@@ -71,6 +71,15 @@ export const orderStatusSchema = z.object({
   }),
 }).passthrough();
 
+export const createOrderSchema = z.object({
+  recipientName: z.string({ required_error: 'recipientName is required' }).trim().min(1, 'recipientName is required').max(100, 'recipientName must be 100 characters or fewer'),
+  deliveryPhone: z.string({ required_error: 'deliveryPhone is required' }).trim().min(7, 'deliveryPhone must be a valid phone number').max(20, 'deliveryPhone must be a valid phone number'),
+  deliveryAddress: z.string({ required_error: 'deliveryAddress is required' }).trim().min(5, 'deliveryAddress must be at least 5 characters').max(200, 'deliveryAddress must be 200 characters or fewer'),
+  deliveryCity: z.string({ required_error: 'deliveryCity is required' }).trim().min(2, 'deliveryCity is required').max(80, 'deliveryCity must be 80 characters or fewer'),
+  deliveryCounty: z.string({ required_error: 'deliveryCounty is required' }).trim().min(2, 'deliveryCounty is required').max(80, 'deliveryCounty must be 80 characters or fewer'),
+  deliveryInstructions: z.string().trim().max(300, 'deliveryInstructions must be 300 characters or fewer').optional().default(''),
+}).passthrough();
+
 export const mpesaRequestSchema = z.object({
   orderId: orderIdSchema.optional(),
   phone: z.string().trim().refine((value) => /^0\d{9}$/.test(value) || /^254\d{9}$/.test(value) || /^\+254\d{9}$/.test(value), {

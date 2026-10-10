@@ -31,7 +31,7 @@ async function renderCart() {
 
     content.innerHTML = `
       <div class="cart-items">${rows}</div>
-      <aside class="cart-summary"><h2>Order summary</h2><div class="summary-line"><span>Items</span><span>${cart.items.reduce((sum, item) => sum + item.quantity, 0)}</span></div><div class="summary-total"><span>Subtotal</span><span>${formatPrice(cart.total)}</span></div><p class="summary-caption">Shipping and any applicable charges are confirmed separately. Final product availability is checked when you place your order.</p><a class="button button-dark button-full" href="/checkout.html">Continue to checkout <span aria-hidden="true">→</span></a></aside>`;
+      <aside class="cart-summary"><h2>Order summary</h2><div class="summary-line"><span>Items</span><span>${cart.items.reduce((sum, item) => sum + item.quantity, 0)}</span></div><div class="summary-total"><span>Subtotal</span><span>${formatPrice(cart.total)}</span></div><p class="summary-caption">Shipping and any applicable charges are confirmed separately. Final product availability is checked when you place your order.</p><a class="button button-dark button-full" href="/checkout.html">Continue to checkout <span aria-hidden="true">→</span></a><button class="button button-light button-full cart-clear" type="button" data-action="clear-cart">Clear bag</button></aside>`;
 
     content.querySelectorAll('.cart-row img').forEach((image) => {
       image.addEventListener('error', (event) => {
@@ -41,15 +41,17 @@ async function renderCart() {
 
     content.querySelectorAll('[data-action]').forEach((button) => {
       button.addEventListener('click', async () => {
-        const row = button.closest('[data-product-id]');
-        const productId = row.dataset.productId;
-        const input = row.querySelector('input');
-        const current = Number(input.value);
         const action = button.dataset.action;
         try {
           if (action === 'remove') {
+            const productId = button.closest('[data-product-id]').dataset.productId;
             await api(`/api/cart/${productId}`, { method: 'DELETE' });
+          } else if (action === 'clear-cart') {
+            await api('/api/cart', { method: 'DELETE' });
           } else {
+            const row = button.closest('[data-product-id]');
+            const productId = row.dataset.productId;
+            const current = Number(row.querySelector('input').value);
             const quantity = action === 'increase' ? current + 1 : Math.max(1, current - 1);
             await api(`/api/cart/${productId}`, { method: 'PATCH', body: JSON.stringify({ quantity }) });
           }

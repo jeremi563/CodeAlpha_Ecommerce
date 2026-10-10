@@ -177,6 +177,15 @@ test('authentication rejects invalid credentials and returns user data', async (
 });
 
 test('cart and checkout flow create a valid order', async () => {
+  const missingDeliveryDetails = await request('/api/orders', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${customerToken}` },
+    body: JSON.stringify({}),
+  });
+
+  assert.equal(missingDeliveryDetails.status, 400);
+  assert.match(String(missingDeliveryDetails.data.message || ''), /recipientName is required/i);
+
   const addToCart = await request('/api/cart', {
     method: 'POST',
     headers: { Authorization: `Bearer ${customerToken}` },
@@ -185,6 +194,24 @@ test('cart and checkout flow create a valid order', async () => {
 
   assert.equal(addToCart.status, 200, 'cart addition should succeed with valid quantity');
   assert.ok(addToCart.data.item);
+
+  const clearCart = await request('/api/cart', {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${customerToken}` },
+  });
+  assert.equal(clearCart.status, 204, 'clearing the cart should succeed');
+
+  const emptyCart = await request('/api/cart', {
+    headers: { Authorization: `Bearer ${customerToken}` },
+  });
+  assert.deepEqual(emptyCart.data.items, [], 'clear-cart should remove every cart item');
+
+  const refillCart = await request('/api/cart', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${customerToken}` },
+    body: JSON.stringify({ productId: createdProductId, quantity: 2 }),
+  });
+  assert.equal(refillCart.status, 200, 'cart should accept items after being cleared');
 
   const cart = await request('/api/cart', {
     headers: { Authorization: `Bearer ${customerToken}` },
@@ -197,10 +224,20 @@ test('cart and checkout flow create a valid order', async () => {
   const order = await request('/api/orders', {
     method: 'POST',
     headers: { Authorization: `Bearer ${customerToken}` },
+    body: JSON.stringify({
+      recipientName: 'Jordan Customer',
+      deliveryPhone: '0712345678',
+      deliveryAddress: '12 Market Street, Apartment 4',
+      deliveryCity: 'Nairobi',
+      deliveryCounty: 'Nairobi',
+      deliveryInstructions: 'Call on arrival',
+    }),
   });
 
   assert.equal(order.status, 201, 'checkout should create an order');
   assert.ok(order.data.order?.id, 'order should include an id');
+  assert.equal(order.data.order.deliveryCity, 'Nairobi');
+  assert.equal(order.data.order.deliveryPhone, '0712345678');
 
   const customerOrders = await request('/api/orders', {
     headers: { Authorization: `Bearer ${customerToken}` },

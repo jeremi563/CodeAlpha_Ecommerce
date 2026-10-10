@@ -8,6 +8,7 @@ const productForm = document.querySelector('#product-form');
 const imagePreview = document.querySelector('#image-preview');
 const imagePreviewEmpty = document.querySelector('#image-preview-empty');
 const orderStatuses = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+let previewObjectUrl = '';
 
 if (!getSession()?.token) {
   location.replace(`/login.html?next=${encodeURIComponent('/admin.html')}`);
@@ -49,8 +50,9 @@ function bindImagePreview() {
       return;
     }
 
-    const objectUrl = URL.createObjectURL(file);
-    imagePreview.src = objectUrl;
+    if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+    previewObjectUrl = URL.createObjectURL(file);
+    imagePreview.src = previewObjectUrl;
     imagePreview.hidden = false;
     imagePreviewEmpty.hidden = true;
   });
@@ -105,6 +107,8 @@ async function createProduct(event) {
     await api('/api/products', { method: 'POST', body: JSON.stringify(data) });
     productForm.reset();
     productForm.elements.stock.value = '0';
+    if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+    previewObjectUrl = '';
     imagePreview.hidden = true;
     imagePreviewEmpty.hidden = false;
     imagePreview.removeAttribute('src');

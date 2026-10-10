@@ -2,9 +2,18 @@ import prisma from '../config/prisma.js';
 
 const orderDetails = {
     items: true,
+    payments: {
+        select: {
+            status: true,
+            amount: true,
+            mpesaReceiptNumber: true,
+            updatedAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+    },
 };
 
-export async function createOrder(userId) {
+export async function createOrder(userId, deliveryDetails) {
     return prisma.$transaction(async (transaction) => {
         const cartItems = await transaction.cartItem.findMany({
             where: { userId },
@@ -49,6 +58,7 @@ export async function createOrder(userId) {
             data: {
                 userId,
                 total: (totalCents / 100).toFixed(2),
+                ...deliveryDetails,
                 items: { create: orderItems },
             },
             include: orderDetails,

@@ -1,5 +1,5 @@
 import * as orderService from '../services/order.service.js';
-import { orderIdSchema, orderStatusSchema, parseBody, parseStringParam } from '../utils/validators.js';
+import { createOrderSchema, orderIdSchema, orderStatusSchema, parseBody, parseStringParam } from '../utils/validators.js';
 
 const orderStatuses = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
 
@@ -27,8 +27,11 @@ function sendOrderError(error, res) {
 }
 
 export async function createOrder(req, res) {
+    const parsed = parseBody(createOrderSchema, req.body);
+    if (parsed.error) return res.status(400).json({ message: parsed.error });
+
     try {
-        const order = await orderService.createOrder(req.user.sub);
+        const order = await orderService.createOrder(req.user.sub, parsed.data);
         return res.status(201).json({ order });
     } catch (error) {
         return sendOrderError(error, res);

@@ -35,13 +35,21 @@ if (header) {
     location.assign('/');
   });
 
-  if (session?.token) {
-    api('/api/cart').then((cart) => {
+  const updateCartCount = async () => {
+    if (!session?.token) return;
+    try {
+      const cart = await api('/api/cart');
       const count = cart.items.reduce((sum, item) => sum + item.quantity, 0);
       const badge = header.querySelector('#cart-count');
       if (badge) badge.textContent = String(count);
-    }).catch(() => {});
-  }
+    } catch {
+      const badge = header.querySelector('#cart-count');
+      if (badge) badge.textContent = '0';
+    }
+  };
+
+  updateCartCount();
+  window.addEventListener('cart-updated', updateCartCount);
 }
 
 if (footer) {

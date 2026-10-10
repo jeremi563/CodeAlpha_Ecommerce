@@ -46,16 +46,6 @@ export function formatPrice(value) {
   }).format(Number(value) || 0);
 }
 
-export function escapeHtml(value = '') {
-  return String(value).replace(/[&<>"']/g, (character) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-  })[character]);
-}
-
 export function productImage(value) {
   if (typeof value !== 'string' || !value.trim()) return fallbackImage;
 

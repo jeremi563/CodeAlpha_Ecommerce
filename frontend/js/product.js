@@ -52,6 +52,7 @@ if (!productId) {
           method: 'POST',
           body: JSON.stringify({ productId: product.id, quantity: Number(quantityInput.value) }),
         });
+        window.dispatchEvent(new Event('cart-updated'));
         showToast('Added to your bag.');
       } catch (error) {
         showToast(error.message, true);

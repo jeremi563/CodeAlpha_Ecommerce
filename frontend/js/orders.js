@@ -23,7 +23,14 @@ function renderOrder(order) {
   card.className = 'order-card';
   const date = new Date(order.createdAt).toLocaleDateString('en-KE', { year: 'numeric', month: 'short', day: 'numeric' });
   const items = order.items.map((item) => `<div class="order-item-line"><span>${escapeText(item.productName)} × ${item.quantity} <span aria-label="each">(${formatPrice(item.unitPrice)} each)</span></span><strong>${formatPrice(item.subtotal)}</strong></div>`).join('');
-  card.innerHTML = `<div class="order-card-header"><div><p class="order-ref">Order ${escapeText(order.id.slice(0, 8).toUpperCase())}</p><p class="order-date">${date}</p></div><span class="status-pill ${order.status === 'CANCELLED' ? 'status-cancelled' : ''}">${escapeText(order.status)}</span></div><div class="order-card-body">${items}<div class="order-card-total"><span>Total</span><span>${formatPrice(order.total)}</span></div></div>`;
+  const delivery = order.recipientName ? `<div class="order-delivery"><strong>Deliver to</strong>${escapeText(order.recipientName)} · ${escapeText(order.deliveryPhone)}<br>${escapeText(order.deliveryAddress)}, ${escapeText(order.deliveryCity)}, ${escapeText(order.deliveryCounty)}${order.deliveryInstructions ? `<br>${escapeText(order.deliveryInstructions)}` : ''}</div>` : '';
+  const successfulPayment = order.payments?.find((payment) => payment.status === 'SUCCEEDED');
+  const payment = successfulPayment
+    ? `<div class="order-payment"><strong>Payment received</strong>${successfulPayment.mpesaReceiptNumber ? `M-Pesa receipt: ${escapeText(successfulPayment.mpesaReceiptNumber)}` : 'M-Pesa payment confirmed'}</div>`
+    : order.status === 'PENDING'
+      ? '<div class="order-payment"><strong>Payment pending</strong>We will update this order when payment is confirmed.</div>'
+      : '';
+  card.innerHTML = `<div class="order-card-header"><div><p class="order-ref">Order ${escapeText(order.id.slice(0, 8).toUpperCase())}</p><p class="order-date">${date}</p></div><span class="status-pill ${order.status === 'CANCELLED' ? 'status-cancelled' : ''}">${escapeText(order.status)}</span></div><div class="order-card-body">${items}<div class="order-card-total"><span>Total</span><span>${formatPrice(order.total)}</span></div>${payment}${delivery}</div>`;
   return card;
 }
 
