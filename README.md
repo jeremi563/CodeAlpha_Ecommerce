@@ -7,6 +7,7 @@ Nexora Store is a full-stack e-commerce web application for browsing products, m
 - User registration and login with JWT authentication
 - Role-based access for customers and admins
 - Public product catalog and product detail pages
+- Database-backed product categories with storefront filters
 - Cart management and checkout flow
 - Order history for authenticated users
 - Admin product management dashboard
@@ -114,6 +115,17 @@ Create a default admin account before testing protected admin routes:
 ```bash
 npm run seed:admin
 ```
+
+## Product categories
+
+Categories are stored in PostgreSQL and managed from the admin store desk. Existing products are assigned to `Uncategorized` by the category migration. Admins can add or rename categories, assign them to products, and delete categories after their products have been reassigned.
+
+Public category and product endpoints:
+
+- `GET /api/categories` lists active categories with active-product counts.
+- `GET /api/products` lists active products and includes category details.
+- `GET /api/products?category=electronics` filters products by category slug.
+- `POST /api/categories`, `PATCH /api/categories/:id`, and `DELETE /api/categories/:id` are admin-only.
 
 ## Run tests
 

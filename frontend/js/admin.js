@@ -4,11 +4,14 @@ import './site.js';
 const message = document.querySelector('#admin-message');
 const productList = document.querySelector('#admin-products');
 const orderList = document.querySelector('#admin-orders');
+const categoryList = document.querySelector('#admin-categories');
 const productForm = document.querySelector('#product-form');
+const categoryForm = document.querySelector('#category-form');
 const imagePreview = document.querySelector('#image-preview');
 const imagePreviewEmpty = document.querySelector('#image-preview-empty');
 const orderStatuses = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
 let previewObjectUrl = '';
+let categories = [];
 
 if (!getSession()?.token) {
   location.replace(`/login.html?next=${encodeURIComponent('/admin.html')}`);
@@ -18,10 +21,12 @@ if (!getSession()?.token) {
     if (user.role !== 'ADMIN') {
       message.textContent = 'Admin access is required to view the store desk.';
       productForm.remove();
+      categoryForm.closest('.admin-section').remove();
     } else {
       bindImagePreview();
       await refreshAdminData();
       productForm.addEventListener('submit', createProduct);
+      categoryForm.addEventListener('submit', createCategory);
     }
   } catch (error) {
     message.textContent = error.message;
@@ -59,12 +64,45 @@ function bindImagePreview() {
 }
 
 async function refreshAdminData() {
-  const [products, { orders }] = await Promise.all([
+  const [products, { orders }, loadedCategories] = await Promise.all([
     api('/api/products'),
     api('/api/admin/orders'),
+    api('/api/categories'),
   ]);
+  categories = loadedCategories;
+  renderCategories(categories);
+  populateProductCategoryOptions();
   renderProducts(products);
   renderOrders(orders);
+}
+
+function populateProductCategoryOptions() {
+  const select = productForm.elements.categoryId;
+  select.replaceChildren(...categories.map((category) => {
+    const option = document.createElement('option');
+    option.value = category.id;
+    option.textContent = category.name;
+    return option;
+  }));
+  const uncategorized = categories.find((category) => category.slug === 'uncategorized');
+  if (uncategorized) select.value = uncategorized.id;
+}
+
+async function createCategory(event) {
+  event.preventDefault();
+  const button = categoryForm.querySelector('button');
+  button.disabled = true;
+  try {
+    const name = String(new FormData(categoryForm).get('name') || '').trim();
+    await api('/api/categories', { method: 'POST', body: JSON.stringify({ name }) });
+    categoryForm.reset();
+    showToast('Category added.');
+    await refreshAdminData();
+  } catch (error) {
+    showToast(error.message, true);
+  } finally {
+    button.disabled = false;
+  }
 }
 
 async function readImageFile(file) {
@@ -100,6 +138,7 @@ async function createProduct(event) {
       name: String(form.get('name') || '').trim(),
       price: Number(form.get('price')),
       stock: Number(form.get('stock')),
+      categoryId: String(form.get('categoryId') || ''),
       description: String(form.get('description') || '').trim() || null,
       imageUrl: finalImageUrl,
     };
@@ -130,20 +169,59 @@ function renderProducts(products) {
   }
 
   const rows = products.map((product) => `
-    <tr><td>${escapeText(product.name)}</td><td>${formatPrice(product.price)}</td><td><label class="sr-only" for="stock-${product.id}">Stock for ${escapeText(product.name)}</label><input class="table-number" id="stock-${product.id}" type="number" min="0" step="1" value="${product.stock}"></td><td><div class="admin-actions"><button class="button button-light" type="button" data-action="save-stock" data-id="${product.id}">Save stock</button><button class="admin-delete" type="button" data-action="delete-product" data-id="${product.id}">Delete</button></div></td></tr>`).join('');
-  productList.innerHTML = `<table class="admin-table"><thead><tr><th>Product</th><th>Price</th><th>Available</th><th>Actions</th></tr></thead><tbody>${rows}</tbody></table>`;
+    <tr><td>${escapeText(product.name)}</td><td>${formatPrice(product.price)}</td><td><label class="sr-only" for="category-${product.id}">Category for ${escapeText(product.name)}</label><select id="category-${product.id}" data-category-for="${product.id}">${categories.map((category) => `<option value="${category.id}" ${product.categoryId === category.id ? 'selected' : ''}>${escapeText(category.name)}</option>`).join('')}</select></td><td><label class="sr-only" for="stock-${product.id}">Stock for ${escapeText(product.name)}</label><input class="table-number" id="stock-${product.id}" type="number" min="0" step="1" value="${product.stock}"></td><td><div class="admin-actions"><button class="button button-light" type="button" data-action="save-product" data-id="${product.id}">Save</button><button class="admin-delete" type="button" data-action="delete-product" data-id="${product.id}">Delete</button></div></td></tr>`).join('');
+  productList.innerHTML = `<table class="admin-table"><thead><tr><th>Product</th><th>Price</th><th>Category</th><th>Available</th><th>Actions</th></tr></thead><tbody>${rows}</tbody></table>`;
   productList.querySelectorAll('[data-action]').forEach((button) => {
     button.addEventListener('click', async () => {
       try {
-        if (button.dataset.action === 'save-stock') {
+        if (button.dataset.action === 'save-product') {
           const stock = Number(productList.querySelector(`#stock-${button.dataset.id}`).value);
-          await api(`/api/products/${button.dataset.id}`, { method: 'PATCH', body: JSON.stringify({ stock }) });
-          showToast('Stock updated.');
+          const categoryId = productList.querySelector(`[data-category-for="${button.dataset.id}"]`).value;
+          await api(`/api/products/${button.dataset.id}`, { method: 'PATCH', body: JSON.stringify({ stock, categoryId }) });
+          showToast('Product updated.');
         } else {
           if (!window.confirm('Delete this product from the collection?')) return;
           await api(`/api/products/${button.dataset.id}`, { method: 'DELETE' });
           showToast('Product deleted.');
         }
+        await refreshAdminData();
+      } catch (error) {
+        showToast(error.message, true);
+      }
+    });
+  });
+}
+
+function renderCategories(categoryRows) {
+  if (categoryRows.length === 0) {
+    categoryList.innerHTML = '<p class="empty-state">No categories yet.</p>';
+    return;
+  }
+
+  const rows = categoryRows.map((category) => `
+    <tr><td><label class="sr-only" for="category-name-${category.id}">Category name</label><input id="category-name-${category.id}" type="text" maxlength="60" value="${escapeText(category.name)}"></td><td>${category._count?.products ?? 0}</td><td><div class="admin-actions"><button class="button button-light" type="button" data-save-category="${category.id}">Save name</button><button class="admin-delete" type="button" data-delete-category="${category.id}" ${category.slug === 'uncategorized' ? 'disabled title="The default category cannot be deleted"' : ''}>Delete</button></div></td></tr>`).join('');
+  categoryList.innerHTML = `<table class="admin-table"><thead><tr><th>Category</th><th>Products</th><th>Actions</th></tr></thead><tbody>${rows}</tbody></table>`;
+
+  categoryList.querySelectorAll('[data-save-category]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const id = button.dataset.saveCategory;
+      const name = categoryList.querySelector(`#category-name-${id}`).value.trim();
+      try {
+        await api(`/api/categories/${id}`, { method: 'PATCH', body: JSON.stringify({ name }) });
+        showToast('Category updated.');
+        await refreshAdminData();
+      } catch (error) {
+        showToast(error.message, true);
+      }
+    });
+  });
+
+  categoryList.querySelectorAll('[data-delete-category]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      if (!window.confirm('Delete this category? Categories with products cannot be deleted.')) return;
+      try {
+        await api(`/api/categories/${button.dataset.deleteCategory}`, { method: 'DELETE' });
+        showToast('Category deleted.');
         await refreshAdminData();
       } catch (error) {
         showToast(error.message, true);

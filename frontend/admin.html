@@ -6,11 +6,19 @@
   <main id="main-content" tabindex="-1" class="wrap page-main admin-main">
     <div class="page-heading"><div><p class="eyebrow">Store operations</p><h1>The store desk<span class="heading-period">.</span></h1></div><span class="admin-indicator">ADMIN</span></div>
     <p id="admin-message" class="form-message" aria-live="polite"></p>
+    <section class="admin-section"><div class="section-heading"><div><p class="eyebrow">Organization</p><h2>Product categories</h2></div></div>
+      <form id="category-form" class="category-form">
+        <label>New category name<input name="name" minlength="2" maxlength="60" required></label>
+        <button class="button button-dark" type="submit">Add category <span aria-hidden="true">+</span></button>
+      </form>
+      <div id="admin-categories" class="admin-table-wrap"><p class="muted">Loading categories…</p></div>
+    </section>
     <section class="admin-section"><div class="section-heading"><div><p class="eyebrow">Inventory</p><h2>Add a product</h2></div></div>
       <form id="product-form" class="admin-product-form">
         <label>Product name<input name="name" required maxlength="120"></label>
         <label>Price (Ksh)<input name="price" type="number" min="0" step="0.01" required></label>
         <label>Opening stock<input name="stock" type="number" min="0" step="1" value="0" required></label>
+        <label>Category<select name="categoryId" required><option value="">Loading categories…</option></select></label>
         <label>Image URL<input name="imageUrl" type="url" placeholder="https://…"></label>
         <label>Upload image<input name="imageUpload" type="file" accept="image/*"></label>
         <div class="image-preview-box wide-field" id="image-preview-box" aria-live="polite">

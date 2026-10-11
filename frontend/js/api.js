@@ -112,6 +112,13 @@ export function productCard(product) {
   const info = document.createElement('div');
   info.className = 'product-card-info';
   const details = document.createElement('div');
+  if (product.category) {
+    const category = document.createElement('a');
+    category.className = 'product-category';
+    category.href = `/products.html?category=${encodeURIComponent(product.category.slug)}`;
+    category.textContent = product.category.name;
+    details.append(category);
+  }
   const title = document.createElement('h3');
   title.className = 'product-card-title';
   const titleLink = document.createElement('a');

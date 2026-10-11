@@ -44,6 +44,7 @@ export const loginSchema = z.object({
 
 export const productCreateSchema = z.object({
   name: z.string().trim().min(1, 'name must be a non-empty string'),
+  categoryId: uuidSchema.optional(),
   description: z.string().trim().nullable().optional(),
   price: z.coerce.number().min(0, 'price must be a non-negative number'),
   stock: z.coerce.number().int('stock must be a non-negative integer').min(0, 'stock must be a non-negative integer').optional(),

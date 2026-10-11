@@ -12,6 +12,7 @@ let baseUrl = '';
 let adminToken = '';
 let customerToken = '';
 let createdProductId = '';
+let createdCategoryId = '';
 let createdCustomerId = '';
 let createdAdminId = '';
 const createdOrderIds = [];
@@ -131,6 +132,10 @@ test.after(async () => {
     await prisma.product.deleteMany({ where: { id: createdProductId } }).catch(() => {});
   }
 
+  if (createdCategoryId) {
+    await prisma.category.deleteMany({ where: { id: createdCategoryId } }).catch(() => {});
+  }
+
   if (createdCustomerId) {
     await prisma.user.deleteMany({ where: { id: createdCustomerId } }).catch(() => {});
   }
@@ -157,6 +162,50 @@ test('public product listing and detail requests work', async () => {
   assert.equal(detailResult.status, 200);
   assert.equal(detailResult.data.id, createdProductId);
   assert.equal(detailResult.data.imageUrl, 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=900&q=80');
+});
+
+test('categories can be managed safely and products can be filtered by category', async () => {
+  const created = await request('/api/categories', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({ name: 'Test Electronics' }),
+  });
+  assert.equal(created.status, 201);
+  assert.equal(created.data.slug, 'test-electronics');
+  createdCategoryId = created.data.id;
+
+  const assigned = await request(`/api/products/${createdProductId}`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({ categoryId: createdCategoryId }),
+  });
+  assert.equal(assigned.status, 200);
+  assert.equal(assigned.data.category.slug, 'test-electronics');
+
+  const filtered = await request('/api/products?category=test-electronics');
+  assert.equal(filtered.status, 200);
+  assert.ok(filtered.data.some((product) => product.id === createdProductId));
+
+  const blockedDelete = await request(`/api/categories/${createdCategoryId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  assert.equal(blockedDelete.status, 409);
+
+  const uncategorized = await prisma.category.findUnique({ where: { slug: 'uncategorized' } });
+  const reassigned = await request(`/api/products/${createdProductId}`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${adminToken}` },
+    body: JSON.stringify({ categoryId: uncategorized.id }),
+  });
+  assert.equal(reassigned.status, 200);
+
+  const deleted = await request(`/api/categories/${createdCategoryId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  assert.equal(deleted.status, 204);
+  createdCategoryId = '';
 });
 
 test('authentication rejects invalid credentials and returns user data', async () => {

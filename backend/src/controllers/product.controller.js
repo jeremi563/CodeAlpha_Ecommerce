@@ -1,4 +1,5 @@
 import * as productService from '../services/product.service.js';
+import * as categoryService from '../services/category.service.js';
 import { parseBody, parseStringParam, productCreateSchema, productIdSchema, productUpdateSchema } from '../utils/validators.js';
 
 function hasValidId(req, res) {
@@ -24,13 +25,19 @@ function readProductData(body, isUpdate = false) {
 
 function sendDatabaseError(error, res) {
     if (error.code === 'P2025') return res.status(404).json({ message: 'Product not found' });
+    if (error.code === 'P2003') return res.status(400).json({ message: 'The selected category does not exist' });
     console.error(error);
     return res.status(500).json({ message: 'Could not complete product request' });
 }
 
 export async function listProducts(req, res) {
+    const categorySlug = typeof req.query.category === 'string' ? req.query.category.trim().toLowerCase() : '';
+    if (categorySlug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(categorySlug)) {
+        return res.status(400).json({ message: 'Category must be a valid category slug' });
+    }
+
     try {
-        const products = await productService.getProducts();
+        const products = await productService.getProducts(categorySlug || undefined);
         res.json(products);
     } catch (error) {
         sendDatabaseError(error, res);
@@ -54,7 +61,8 @@ export async function createProduct(req, res) {
     if (error) return res.status(400).json({ message: error });
 
     try {
-        const product = await productService.createProduct(data);
+        const categoryId = data.categoryId || await categoryService.getUncategorizedId();
+        const product = await productService.createProduct({ ...data, categoryId });
         res.status(201).json(product);
     } catch (databaseError) {
         sendDatabaseError(databaseError, res);
