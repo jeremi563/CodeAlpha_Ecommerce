@@ -14,7 +14,7 @@ async function loadSummary() {
   try {
     const cart = await api('/api/cart');
     if (cart.items.length === 0) {
-      content.innerHTML = '<div class="empty-state"><h2>Nothing to check out yet.</h2><p>Add an item to your bag first.</p><a class="button button-dark" href="/products.html">Browse the collection</a></div>';
+      content.innerHTML = '<div class="empty-state"><h2>Nothing to check out yet.</h2><p>Add an item to your cart first.</p><a class="button button-dark" href="/products.html">Browse the collection</a></div>';
       return;
     }
 
@@ -38,7 +38,7 @@ async function loadSummary() {
 
     content.querySelector('#checkout-form').addEventListener('submit', placeOrder);
   } catch (error) {
-    content.innerHTML = `<div class="empty-state"><h2>We could not load checkout.</h2><p>${escapeText(error.message)}</p><a class="button button-dark" href="/cart.html">Return to your bag</a></div>`;
+    content.innerHTML = `<div class="empty-state"><h2>We could not load checkout.</h2><p>${escapeText(error.message)}</p><a class="button button-dark" href="/cart.html">Return to your cart</a></div>`;
   }
 }
 

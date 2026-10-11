@@ -12,6 +12,16 @@ export const orderIdSchema = z.string().regex(UUID_REGEX, {
   message: 'Order id must be a valid UUID',
 });
 
+export const passwordPolicyMessage = 'Password must be 8-72 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.';
+
+export const strongPasswordSchema = z.string({ required_error: 'email and password are required' })
+  .trim()
+  .min(8, passwordPolicyMessage)
+  .max(72, passwordPolicyMessage)
+  .refine((value) => /[a-z]/.test(value) && /[A-Z]/.test(value) && /\d/.test(value) && /[^A-Za-z0-9]/.test(value), {
+    message: passwordPolicyMessage,
+  });
+
 export const registerSchema = z.object({
   name: z
     .string({ required_error: 'name must be between 1 and 80 characters' })
@@ -24,10 +34,7 @@ export const registerSchema = z.object({
     .toLowerCase()
     .min(1, 'email and password are required')
     .email('email must be a valid email address'),
-  password: z
-    .string({ required_error: 'email and password are required' })
-    .min(8, 'password must be at least 8 characters and no more than 72 bytes')
-    .max(72, 'password must be at least 8 characters and no more than 72 bytes'),
+  password: strongPasswordSchema,
 }).passthrough();
 
 export const loginSchema = z.object({
@@ -37,9 +44,7 @@ export const loginSchema = z.object({
     .toLowerCase()
     .min(1, 'email and password are required')
     .email('email must be a valid email address'),
-  password: z
-    .string({ required_error: 'email and password are required' })
-    .min(1, 'email and password are required'),
+  password: strongPasswordSchema,
 }).passthrough();
 
 export const productCreateSchema = z.object({

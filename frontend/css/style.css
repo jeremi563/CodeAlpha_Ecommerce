@@ -154,7 +154,12 @@ h2 { margin-bottom: 0; font-size: 54px; line-height: 1.15; }
 .header-actions { justify-self: end; display: flex; align-items: center; gap: 22px; }
 .header-text-button { border: 0; padding: 0; background: transparent; cursor: pointer; font-size: 13px; font-weight: 600; }
 .header-text-button:hover { color: var(--forest); }
+.user-pill { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; background: var(--white); }
+.user-pill strong { font-size: 12px; font-weight: 700; }
+.user-pill-label { color: var(--muted); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
 .cart-link { display: inline-flex; align-items: center; gap: 8px; }
+.cart-label { font-size: 13px; font-weight: 600; }
+.cart-link svg { width: 18px; height: 18px; }
 .cart-count { min-width: 19px; height: 19px; display: inline-grid; place-items: center; padding-inline: 5px; border-radius: 50%; background: var(--lime); font-size: 10px; font-weight: 700; }
 .menu-toggle { display: none; border: 0; background: none; padding: 8px; cursor: pointer; font-size: 22px; }
 
@@ -269,8 +274,12 @@ h2 { margin-bottom: 0; font-size: 54px; line-height: 1.15; }
 .stack-form textarea, .admin-product-form textarea { resize: vertical; }
 .stack-form input:focus, .stack-form textarea:focus, .admin-product-form input:focus, .admin-product-form textarea:focus, .admin-table select:focus { border-color: var(--forest); box-shadow: 0 0 0 2px var(--surface-tone-20); }
 .stack-form small { color: var(--muted); font-size: 10px; font-weight: 400; }
+.password-wrap { position: relative; }
+.password-wrap input { padding-right: 52px; }
+.password-toggle { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); border: 1px solid var(--line); border-radius: 999px; padding: 5px 8px; background: var(--white); color: var(--forest); cursor: pointer; font-size: 10px; font-weight: 700; text-transform: uppercase; }
 .form-message { min-height: 18px; margin: 0; color: var(--coral); font-size: 12px; }
 .form-message.success { color: var(--forest); }
+.google-auth-button { display: flex; justify-content: center; min-height: 40px; margin-top: 4px; }
 .auth-switch { margin: 20px 0 0; color: var(--muted); font-size: 11px; text-align: center; }
 .auth-switch a { color: var(--forest); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 
@@ -320,6 +329,24 @@ h2 { margin-bottom: 0; font-size: 54px; line-height: 1.15; }
 .admin-actions { display: flex; align-items: center; gap: 8px; }
 .admin-delete { border: 0; background: none; color: var(--surface-tone-24); cursor: pointer; font-size: 11px; text-decoration: underline; }
 
+.account-shell, .dashboard-shell { padding-block: 42px 82px; }
+.dashboard-grid { display: grid; grid-template-columns: 1.4fr .6fr; gap: 24px; }
+.dashboard-panel, .account-card { border: 1px solid var(--line); background: var(--white); padding: 24px; }
+.account-card h2, .dashboard-panel h2 { margin: 0 0 18px; font-size: 22px; }
+.account-card p, .dashboard-panel p { margin: 0 0 14px; color: var(--muted); }
+.account-highlight { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: var(--soft-green); color: var(--forest); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.stat-card { border: 1px solid var(--line); background: var(--surface-tone-17); padding: 18px; }
+.stat-card-label { display: block; margin-bottom: 10px; color: var(--muted); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+.stat-card strong { font-size: 24px; font-family: var(--font-display); }
+.profile-form { display: grid; gap: 16px; }
+.profile-form .field-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.profile-form label { display: grid; gap: 7px; font-size: 11px; font-weight: 700; }
+.profile-form input { min-height: 46px; border: 1px solid var(--line); border-radius: 4px; padding: 12px 14px; background: var(--white); }
+.account-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.account-status-list { display: grid; gap: 10px; padding: 0; margin: 0; list-style: none; }
+.account-status-list li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 10px; color: var(--muted); font-size: 12px; }
+.account-status-list strong { color: var(--ink); }
 .site-footer { border-top: 1px solid var(--line); background: var(--surface-tone-27); }
 .footer-inner { min-height: 114px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
 .footer-brand { font-family: var(--font-display); font-size: 14px; font-weight: 800; }

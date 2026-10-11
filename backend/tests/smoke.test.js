@@ -225,6 +225,60 @@ test('authentication rejects invalid credentials and returns user data', async (
   assert.equal(profile.data.user.role, 'CUSTOMER');
 });
 
+test('Google sign-in verifies the ID token and returns an app session', async () => {
+  const previousClientId = process.env.GOOGLE_CLIENT_ID;
+  const originalFetch = globalThis.fetch;
+  const clientId = 'nexora-google-client.apps.googleusercontent.com';
+  const email = `${uniqueId('google')}@example.com`;
+  process.env.GOOGLE_CLIENT_ID = clientId;
+  globalThis.fetch = async (input, init) => {
+    if (String(input).startsWith('https://oauth2.googleapis.com/tokeninfo')) {
+      const token = new URL(String(input)).searchParams.get('id_token');
+      return new Response(JSON.stringify({
+        aud: token === 'invalid-audience-token' ? 'attacker-client' : clientId,
+        iss: 'https://accounts.google.com',
+        exp: String(Math.floor(Date.now() / 1000) + 300),
+        sub: 'google-test-subject',
+        email,
+        email_verified: 'true',
+        name: 'Google Test User',
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+    return originalFetch(input, init);
+  };
+
+  try {
+    const config = await request('/api/auth/google/config');
+    assert.equal(config.status, 200);
+    assert.equal(config.data.clientId, clientId);
+
+    const result = await request('/api/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ credential: 'google-id-token' }),
+    });
+    assert.equal(result.status, 200);
+    assert.equal(result.data.user.email, email);
+    assert.ok(result.data.token);
+
+    const wrongAudience = await request('/api/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ credential: 'invalid-audience-token' }),
+    });
+    assert.equal(wrongAudience.status, 401);
+
+    const forged = await request('/api/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ email: 'forged@example.com', name: 'Forged User' }),
+    });
+    assert.equal(forged.status, 400);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (previousClientId === undefined) delete process.env.GOOGLE_CLIENT_ID;
+    else process.env.GOOGLE_CLIENT_ID = previousClientId;
+    await prisma.user.deleteMany({ where: { email } });
+  }
+});
+
 test('cart and checkout flow create a valid order', async () => {
   const missingDeliveryDetails = await request('/api/orders', {
     method: 'POST',
@@ -480,6 +534,36 @@ test('M-Pesa callback confirms an order once and ignores duplicate callbacks', a
   assert.equal(duplicate.status, 200);
   assert.equal((await prisma.payment.findUnique({ where: { checkoutRequestId: 'ws_CO_callback_success' } })).status, 'SUCCEEDED');
   assert.equal((await prisma.order.findUnique({ where: { id: order.id } })).status, 'PROCESSING');
+});
+
+test('password registration enforces the stronger format requirement', async () => {
+  const weakPassword = await request('/api/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: 'Weak Password User',
+      email: `${uniqueId('weak')}@example.com`,
+      password: 'password',
+    }),
+  });
+
+  assert.equal(weakPassword.status, 400);
+  assert.match(String(weakPassword.data.message || ''), /uppercase|number|special|8 characters/i);
+
+  const strongPassword = await request('/api/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: 'Strong Password User',
+      email: `${uniqueId('strong')}@example.com`,
+      password: 'StrongPass123!',
+    }),
+  });
+
+  assert.equal(strongPassword.status, 201);
+  assert.ok(strongPassword.data.user?.id);
+
+  await prisma.user.deleteMany({
+    where: { email: { in: [strongPassword.data.user.email] } },
+  });
 });
 
 test('M-Pesa failed callbacks do not mark orders as processing', async () => {

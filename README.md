@@ -12,7 +12,8 @@ Nexora Store is a full-stack e-commerce web application for browsing products, m
 - Order history for authenticated users
 - Admin product management dashboard
 - M-Pesa payment integration support in sandbox mode
-- Authenticated users are redirected away from the home page to the shop
+- Authenticated users are redirected away from the home page to their dashboard
+- Google sign-in with server-verified Google ID tokens
 
 ## Tech stack
 
@@ -79,9 +80,12 @@ cp .env.example .env
 PORT=5000
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/nexora_store"
 JWT_SECRET="replace-with-a-long-random-secret"
+GOOGLE_CLIENT_ID="your-google-oauth-web-client-id"
 MPESA_ENABLED=false
 MPESA_ENVIRONMENT=sandbox
 ```
+
+To enable Google sign-in, create an OAuth client of type **Web application** in Google Cloud Console. Add `http://localhost:5000` under **Authorized JavaScript origins** for local development, and add the exact HTTPS origin used by the deployed app before launch. Set the resulting client ID as `GOOGLE_CLIENT_ID` in `backend/.env` locally and in the deployment environment, then restart the server. No Google client secret belongs in the frontend or this application. Without this setting, email/password sign-in remains available.
 
 4. Install dependencies and generate Prisma client:
 
@@ -107,6 +111,7 @@ The app will run at:
 
 - Frontend/API base: http://localhost:5000
 - Homepage: http://localhost:5000/
+- Signed-in landing page: http://localhost:5000/dashboard.html
 
 ## Admin account
 

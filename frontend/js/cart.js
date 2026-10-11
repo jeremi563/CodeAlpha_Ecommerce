@@ -14,7 +14,7 @@ async function renderCart() {
   try {
     const cart = await api('/api/cart');
     if (cart.items.length === 0) {
-      content.innerHTML = '<div class="empty-state"><h2>Your bag is taking a breather.</h2><p>Find something useful for the road ahead.</p><a class="button button-dark" href="/products.html">Browse the collection <span aria-hidden="true">→</span></a></div>';
+      content.innerHTML = '<div class="empty-state"><h2>Your cart is taking a breather.</h2><p>Find something useful for the road ahead.</p><a class="button button-dark" href="/products.html">Browse the collection <span aria-hidden="true">→</span></a></div>';
       return;
     }
 
@@ -31,7 +31,7 @@ async function renderCart() {
 
     content.innerHTML = `
       <div class="cart-items">${rows}</div>
-      <aside class="cart-summary"><h2>Order summary</h2><div class="summary-line"><span>Items</span><span>${cart.items.reduce((sum, item) => sum + item.quantity, 0)}</span></div><div class="summary-total"><span>Subtotal</span><span>${formatPrice(cart.total)}</span></div><p class="summary-caption">Shipping and any applicable charges are confirmed separately. Final product availability is checked when you place your order.</p><a class="button button-dark button-full" href="/checkout.html">Continue to checkout <span aria-hidden="true">→</span></a><button class="button button-light button-full cart-clear" type="button" data-action="clear-cart">Clear bag</button></aside>`;
+      <aside class="cart-summary"><h2>Order summary</h2><div class="summary-line"><span>Items</span><span>${cart.items.reduce((sum, item) => sum + item.quantity, 0)}</span></div><div class="summary-total"><span>Subtotal</span><span>${formatPrice(cart.total)}</span></div><p class="summary-caption">Shipping and any applicable charges are confirmed separately. Final product availability is checked when you place your order.</p><a class="button button-dark button-full" href="/checkout.html">Continue to checkout <span aria-hidden="true">→</span></a><button class="button button-light button-full cart-clear" type="button" data-action="clear-cart">Clear cart</button></aside>`;
 
     content.querySelectorAll('.cart-row img').forEach((image) => {
       image.addEventListener('error', (event) => {
@@ -63,7 +63,7 @@ async function renderCart() {
       });
     });
   } catch (error) {
-    content.innerHTML = `<div class="empty-state"><h2>Your bag could not load.</h2><p>${escapeText(error.message)}</p><a class="button button-dark" href="/products.html">Back to the collection</a></div>`;
+    content.innerHTML = `<div class="empty-state"><h2>Your cart could not load.</h2><p>${escapeText(error.message)}</p><a class="button button-dark" href="/products.html">Back to the collection</a></div>`;
   }
 }
 

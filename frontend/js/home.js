@@ -2,7 +2,7 @@ import { api, getSession, productCard } from './api.js';
 import './site.js';
 
 if (getSession()?.token) {
-  location.replace('/products.html');
+  location.replace('/dashboard.html');
 } else {
   const productGrid = document.querySelector('#featured-products');
 

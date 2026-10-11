@@ -6,6 +6,9 @@ const router = Router();
 
 router.post('/register', authController.register);
 router.post('/login', authController.login);
+router.get('/google/config', authController.googleConfig);
+router.post('/google', authController.googleLogin);
 router.get('/me', requireAuth, authController.getCurrentUser);
+router.patch('/me', requireAuth, authController.updateCurrentUser);
 
 export default router;

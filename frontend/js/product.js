@@ -24,7 +24,7 @@ if (!productId) {
         <div class="stock-line"><span class="stock-dot${available ? '' : ' out'}"></span>${available ? `${product.stock} available` : 'Currently out of stock'}</div>
         <div class="detail-actions">
           <div class="quantity-control"><button type="button" data-step="-1" aria-label="Decrease quantity">−</button><input id="quantity" type="number" min="1" max="${product.stock}" value="1" aria-label="Quantity" ${available ? '' : 'disabled'}><button type="button" data-step="1" aria-label="Increase quantity" ${available ? '' : 'disabled'}>+</button></div>
-          <button class="button button-dark" id="add-to-cart" type="button" ${available ? '' : 'disabled'}>Add to bag <span aria-hidden="true">→</span></button>
+          <button class="button button-dark" id="add-to-cart" type="button" ${available ? '' : 'disabled'}>Add to cart <span aria-hidden="true">→</span></button>
         </div>
         <p class="detail-note">Your cart is saved to your account. Product availability is confirmed again at checkout.</p>
       </div>`;
@@ -53,7 +53,7 @@ if (!productId) {
           body: JSON.stringify({ productId: product.id, quantity: Number(quantityInput.value) }),
         });
         window.dispatchEvent(new Event('cart-updated'));
-        showToast('Added to your bag.');
+        showToast('Added to your cart.');
       } catch (error) {
         showToast(error.message, true);
       } finally {
