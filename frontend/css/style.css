@@ -542,6 +542,41 @@ h2 { font-size: 30px; font-weight: 600; }
 .menu-toggle { color: var(--forest); }
 .skip-link { position: fixed; top: 8px; left: 8px; z-index: 50; background: var(--paper); padding: 10px 16px; transform: translateY(-200%); }
 .skip-link:focus { transform: translateY(0); }
+@media (max-width: 620px) {
+  .brand { font-size: 18px; }
+  .header-actions { min-width: 0; gap: 7px; }
+  .user-pill { gap: 0; padding: 6px 8px; }
+  .user-pill-label { font-size: 9px; letter-spacing: 0; }
+  .user-pill strong { display: none; }
+  .header-text-button { min-height: 44px; padding-inline: 4px; }
+  .cart-link { min-height: 44px; gap: 5px; }
+  .menu-toggle { width: 44px; height: 44px; display: grid; place-items: center; padding: 0; }
+  .dashboard-shell, .account-shell { padding-block: 28px 54px; }
+  .dashboard-shell .page-heading, .account-shell .page-heading { display: flex; flex-direction: column; align-items: stretch; gap: 16px; margin-bottom: 22px; }
+  .dashboard-shell .page-heading h1, .account-shell .page-heading h1 { font-size: 34px; overflow-wrap: anywhere; }
+  .dashboard-shell .page-heading .button, .account-shell .page-heading .button { width: 100%; }
+  .dashboard-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .dashboard-panel, .account-card { min-width: 0; padding: 18px; }
+  .dashboard-panel h2, .account-card h2 { font-size: 20px; overflow-wrap: anywhere; }
+  .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .stat-card { min-width: 0; padding: 13px; }
+  .stat-card-label { overflow-wrap: anywhere; font-size: 10px; }
+  .stat-card strong { font-size: 19px; overflow-wrap: anywhere; }
+  .profile-form .field-row { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .account-status-list li { align-items: flex-start; flex-wrap: wrap; }
+  .account-status-list strong { max-width: 100%; overflow-wrap: anywhere; text-align: right; }
+  .account-actions { align-items: stretch; }
+  .account-actions .button { flex: 1 1 100%; }
+}
+@media (max-width: 360px) {
+  .wrap { width: calc(100% - 24px); }
+  .brand { font-size: 16px; }
+  .cart-label { display: inline; }
+  .header-actions { gap: 4px; }
+  .user-pill { display: none; }
+  .dashboard-panel, .account-card { padding: 14px; }
+  .stat-grid { grid-template-columns: minmax(0, 1fr); }
+}
 @media (max-width: 1000px) {
  .wrap { width: calc(100% - 48px); }
  .hero { padding: 64px 40px; }
